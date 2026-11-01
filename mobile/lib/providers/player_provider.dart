@@ -264,7 +264,30 @@ class PlayerProvider extends ChangeNotifier {
     _isBuffering = true;
     notifyListeners();
 
-    await _audioHandler.playTrack(track);
+    Track trackToPlay = track;
+    if (track.isYouTube &&
+        (track.filePath.isEmpty ||
+            !track.filePath.startsWith('http') ||
+            track.filePath.contains('10.0.2.2'))) {
+      final streamUrl = await _ytService.resolveStreamUrl(track.id.replaceFirst('yt:', ''));
+      if (streamUrl != null && streamUrl.isNotEmpty) {
+        trackToPlay = Track(
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          duration: track.duration,
+          filePath: streamUrl,
+          thumbnailUrl: track.thumbnailUrl,
+          source: TrackSource.youtube,
+        );
+        _currentTrack = trackToPlay;
+        notifyListeners();
+      }
+    }
+
+    await _audioHandler.playTrack(trackToPlay);
+
   }
 
   void playNext(Track track) {

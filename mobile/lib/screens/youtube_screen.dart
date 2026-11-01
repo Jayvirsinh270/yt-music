@@ -40,6 +40,59 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
     }
   }
 
+  void _showServerDialog(BuildContext context) {
+    final player = context.read<PlayerProvider>();
+    final controller = TextEditingController(text: player.ytService.serverHost);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161B26),
+        title: const Text('Linus Connection Settings',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '✨ Direct YouTube mode is active. Searches & streams directly from YouTube with no PC required.\n\nOptionally connect to your PC to sync your PC downloads folder over Wi-Fi:',
+              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'e.g. http://192.168.1.15:5000',
+                hintStyle: TextStyle(color: Colors.grey.shade600),
+                filled: true,
+                fillColor: const Color(0xFF10141D),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF334B)),
+            child: const Text('Save Settings', style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              player.ytService.setServerHost(controller.text);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Server settings saved!')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final player = context.watch<PlayerProvider>();
@@ -54,7 +107,7 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
           children: [
             // Top Header
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
               child: Row(
                 children: [
                   Container(
@@ -84,7 +137,7 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
                           ),
                         ),
                         Text(
-                          'Instant stream • Zero ads',
+                          'Direct stream • Zero ads',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade400,
@@ -94,14 +147,14 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                     decoration: BoxDecoration(
                       color: ytColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: ytColor.withOpacity(0.3)),
                     ),
                     child: const Text(
-                      'ONLINE',
+                      'DIRECT',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -109,6 +162,11 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
                         letterSpacing: 0.8,
                       ),
                     ),
+                  ),
+                  IconButton(
+                    tooltip: 'Settings',
+                    icon: const Icon(Icons.settings_outlined, color: Colors.white70, size: 22),
+                    onPressed: () => _showServerDialog(context),
                   ),
                 ],
               ),
@@ -201,6 +259,16 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
                               Text(
                                 'No YouTube results found',
                                 style: TextStyle(color: Colors.grey.shade400),
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                icon: const Icon(Icons.refresh, color: Color(0xFFFF334B)),
+                                label: const Text('Try Again', style: TextStyle(color: Color(0xFFFF334B))),
+                                onPressed: () {
+                                  player.searchYouTube(_activeChip.isNotEmpty
+                                      ? _vibeChips.firstWhere((c) => c['label'] == _activeChip)['query']!
+                                      : 'Trending Music 2026');
+                                },
                               ),
                             ],
                           ),

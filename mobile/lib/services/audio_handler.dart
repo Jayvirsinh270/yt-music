@@ -93,7 +93,17 @@ class LinusAudioHandler extends BaseAudioHandler with SeekHandler {
       if (track.filePath.startsWith('http://') ||
           track.filePath.startsWith('https://') ||
           track.filePath.startsWith('content://')) {
-        await _player.setAudioSource(AudioSource.uri(Uri.parse(track.filePath)));
+        final uri = Uri.parse(track.filePath);
+        final headers = track.isYouTube
+            ? {
+                'User-Agent':
+                    'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
+              }
+            : null;
+        await _player.setAudioSource(
+          AudioSource.uri(uri, headers: headers, tag: track.toMediaItem()),
+          preload: true,
+        );
       } else {
         await _player.setFilePath(track.filePath);
       }
@@ -103,7 +113,7 @@ class LinusAudioHandler extends BaseAudioHandler with SeekHandler {
       playbackState.add(playbackState.value.copyWith(
         processingState: AudioProcessingState.idle,
       ));
-      onPlaybackError?.call(track, 'Unable to play local file: ${e.toString()}');
+      onPlaybackError?.call(track, 'Unable to play: ${e.toString()}');
     }
   }
 

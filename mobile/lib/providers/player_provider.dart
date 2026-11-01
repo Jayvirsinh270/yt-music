@@ -31,10 +31,13 @@ class PlayerProvider extends ChangeNotifier {
   List<Track> _youtubeTracks = [];
   bool _isLoadingYouTube = false;
 
+  // Queue & Suggestions
   Track? _currentTrack;
   final List<Track> _queue = [];
   final List<Track> _history = [];
   final List<Track> _favorites = [];
+  List<Track> _suggestedTracks = [];
+  bool _autoplay = true; // Linus infinite radio autoplay
 
   bool _isPlaying = false;
   bool _isBuffering = false;
@@ -57,7 +60,7 @@ class PlayerProvider extends ChangeNotifier {
     _loadFavorites();
     _ytService.init();
     scanDeviceTracks();
-    searchYouTube('Trending Music 2026');
+    searchYouTube('Lofi chill study beats calm');
   }
 
   // Local tracks getters
@@ -71,11 +74,15 @@ class PlayerProvider extends ChangeNotifier {
   bool get isLoadingYouTube => _isLoadingYouTube;
   YouTubeService get ytService => _ytService;
 
-  // Playback getters
+  // Queue & Suggestion getters
   Track? get currentTrack => _currentTrack;
   List<Track> get queue => List.unmodifiable(_queue);
   List<Track> get favorites => List.unmodifiable(_favorites);
   List<Track> get history => List.unmodifiable(_history);
+  List<Track> get suggestedTracks => List.unmodifiable(_suggestedTracks);
+  bool get autoplay => _autoplay;
+
+  // Playback getters
   bool get isPlaying => _isPlaying;
   bool get isBuffering => _isBuffering;
   Duration get position => _position;
@@ -92,6 +99,11 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   bool isFavorite(String trackId) => _favorites.any((t) => t.id == trackId);
+
+  void toggleAutoplay() {
+    _autoplay = !_autoplay;
+    notifyListeners();
+  }
 
   // Scan or re-scan device for local storage audio files
   Future<void> scanDeviceTracks({TrackSortType? sortType}) async {
@@ -132,7 +144,6 @@ class PlayerProvider extends ChangeNotifier {
   Future<bool> downloadToLocal(Track track) async {
     final success = await _ytService.downloadToLocal(track);
     if (success) {
-      // rescan local files after a moment to reflect download
       Future.delayed(const Duration(seconds: 4), () => scanDeviceTracks());
     }
     return success;
@@ -173,9 +184,12 @@ class PlayerProvider extends ChangeNotifier {
 
     _audioHandler.onPlaybackError = (track, message) {
       _isBuffering = false;
-      _errorController.add("Playback error: ${track.title}. Skipping...");
+      _errorController.add("Playback error on ${track.title}. Skipping...");
       notifyListeners();
-      skipNext();
+      // Auto skip to next track without halting playback
+      Future.delayed(const Duration(milliseconds: 600), () {
+        skipNext();
+      });
     };
 
     _audioHandler.positionStream.listen((pos) {
@@ -248,13 +262,20 @@ class PlayerProvider extends ChangeNotifier {
     _trackStartTime = DateTime.now();
   }
 
+  /// Primary playTrack implementation with instant resolution & zero lag
   Future<void> playTrack(Track track, {List<Track>? newQueue}) async {
     _recordListeningMetric();
 
     _currentTrack = track;
     if (newQueue != null) {
       _queue.clear();
-      _queue.addAll(newQueue.where((t) => t.id != track.id));
+      // Natural playlist order: tracks following the tapped one go to queue first!
+      final idx = newQueue.indexWhere((t) => t.id == track.id);
+      if (idx != -1 && idx + 1 < newQueue.length) {
+        _queue.addAll(newQueue.sublist(idx + 1));
+      } else {
+        _queue.addAll(newQueue.where((t) => t.id != track.id));
+      }
       if (_isShuffle) {
         _queue.shuffle();
       }
@@ -283,22 +304,80 @@ class PlayerProvider extends ChangeNotifier {
         );
         _currentTrack = trackToPlay;
         notifyListeners();
+      } else {
+        // Stream URL resolution failed or null!
+        debugPrint('[PlayerProvider] Stream URL resolution failed for ${track.title}. Auto-advancing...');
+        _isBuffering = false;
+        notifyListeners();
+        _errorController.add('Unable to stream "${track.title}". Playing next...');
+        Future.delayed(const Duration(milliseconds: 300), () => skipNext());
+        return;
       }
     }
 
     await _audioHandler.playTrack(trackToPlay);
 
+    // Pre-cache next song in queue for zero-gap playback
+    if (_queue.isNotEmpty && _queue.first.isYouTube) {
+      _ytService.prefetchNextTrack(_queue.first.id);
+    }
+
+    // Auto-replenish queue with YouTube suggestions if queue is getting low (Linus Autoplay)
+    if (track.isYouTube && _queue.length < 8) {
+      _replenishYouTubeQueue(track);
+    }
+  }
+
+  /// Auto-fetches YouTube related songs to keep the queue full forever
+  Future<void> _replenishYouTubeQueue(Track track) async {
+    try {
+      final related = await _ytService.getRelatedTracks(track.id, track.artist);
+      if (related.isNotEmpty) {
+        final existingIds = {..._queue.map((t) => t.id), ..._history.map((t) => t.id), track.id};
+        final newTracks = related.where((t) => !existingIds.contains(t.id)).toList();
+        if (newTracks.isNotEmpty) {
+          _queue.addAll(newTracks);
+          _suggestedTracks = List.from(newTracks);
+          notifyListeners();
+
+          // Pre-fetch the upcoming song
+          if (_queue.isNotEmpty && _queue.first.isYouTube) {
+            _ytService.prefetchNextTrack(_queue.first.id);
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   void playNext(Track track) {
     _queue.removeWhere((t) => t.id == track.id);
     _queue.insert(0, track);
     notifyListeners();
+    if (track.isYouTube) {
+      _ytService.prefetchNextTrack(track.id);
+    }
   }
 
   void addToQueue(Track track) {
     _queue.removeWhere((t) => t.id == track.id);
     _queue.add(track);
+    notifyListeners();
+    if (_queue.length == 1 && track.isYouTube) {
+      _ytService.prefetchNextTrack(track.id);
+    }
+  }
+
+  void addSuggestedToQueue(Track track) {
+    _suggestedTracks.removeWhere((t) => t.id == track.id);
+    _queue.add(track);
+    notifyListeners();
+    if (_queue.length == 1 && track.isYouTube) {
+      _ytService.prefetchNextTrack(track.id);
+    }
+  }
+
+  void clearQueue() {
+    _queue.clear();
     notifyListeners();
   }
 
@@ -318,22 +397,49 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> skipNext() async {
-    if (_currentTrack != null) {
-      _history.insert(0, _currentTrack!);
-    }
+  bool _isTransitioning = false;
 
-    if (_queue.isNotEmpty) {
-      final nextTrack = _queue.removeAt(0);
-      await playTrack(nextTrack);
-    } else if (_currentTrack != null) {
-      final nextAutoplay = await _recEngine.getNextAutoplayTrack(
-        _currentTrack!,
-        {..._history.map((t) => t.id), _currentTrack!.id},
-      );
-      if (nextAutoplay != null) {
-        await playTrack(nextAutoplay);
+  /// Seamless skipNext that never stops playing
+  Future<void> skipNext() async {
+    if (_isTransitioning) return;
+    _isTransitioning = true;
+
+    try {
+      if (_currentTrack != null) {
+        _history.insert(0, _currentTrack!);
       }
+
+      if (_queue.isNotEmpty) {
+        final nextTrack = _queue.removeAt(0);
+        await playTrack(nextTrack);
+      } else if (_currentTrack != null && _autoplay) {
+        // Endless radio mode: fetch next tracks dynamically
+        if (_currentTrack!.isYouTube) {
+          _isBuffering = true;
+          notifyListeners();
+          final related = await _ytService.getRelatedTracks(_currentTrack!.id, _currentTrack!.artist);
+          if (related.isNotEmpty) {
+            final nextTrack = related.removeAt(0);
+            _queue.addAll(related);
+            _suggestedTracks = List.from(related);
+            await playTrack(nextTrack);
+            return;
+          }
+        }
+
+        // Local fallback
+        final nextAutoplay = await _recEngine.getNextAutoplayTrack(
+          _currentTrack!,
+          {..._history.map((t) => t.id), _currentTrack!.id},
+        );
+        if (nextAutoplay != null) {
+          await playTrack(nextAutoplay);
+        }
+      }
+    } finally {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        _isTransitioning = false;
+      });
     }
   }
 
@@ -356,6 +462,11 @@ class PlayerProvider extends ChangeNotifier {
     if (_repeatMode == PlaybackRepeatMode.one && _currentTrack != null) {
       await seek(Duration.zero);
       await _audioHandler.play();
+    } else if (_repeatMode == PlaybackRepeatMode.all && _queue.isEmpty && _history.isNotEmpty) {
+      // Loop history back into queue
+      _queue.addAll(_history.reversed);
+      _history.clear();
+      await skipNext();
     } else {
       await skipNext();
     }

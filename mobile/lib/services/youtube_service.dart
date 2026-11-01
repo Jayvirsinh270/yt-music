@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 import '../models/track.dart';
 
 class _CachedStream {
@@ -19,11 +20,17 @@ class YouTubeService {
   // In-memory instant stream cache (avoids repeated network calls)
   static final Map<String, _CachedStream> _streamCache = {};
 
+  final yte.YoutubeExplode _ytExplode = yte.YoutubeExplode();
+
   String get serverHost => _serverHost;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _serverHost = prefs.getString(_prefKeyHost) ?? '';
+  }
+
+  void dispose() {
+    _ytExplode.close();
   }
 
   Future<void> setServerHost(String host) async {
@@ -274,9 +281,11 @@ class YouTubeService {
     return [];
   }
 
-  /// Ultra-fast stream resolution with zero lag:
-  /// Races Innertube Android, iOS, TV, and top mirrors concurrently.
-  /// Completes as soon as the first valid audio URL arrives (< 400ms typical).
+  /// High-reliability stream resolution:
+  /// 1. Instant Cache Check (0ms)
+  /// 2. Direct Official YouTube Stream via youtube_explode_dart (pure Dart, cipher deciphered, highest bitrate AAC/Opus)
+  /// 3. Parallel Fast Public Mirrors Racing (Piped & Invidious)
+  /// 4. PC Server proxy fallback if configured
   Future<String?> resolveStreamUrl(String videoId) async {
     final cleanId = videoId.replaceFirst('yt:', '').trim();
     if (cleanId.isEmpty) return null;
@@ -287,57 +296,41 @@ class YouTubeService {
       return cached.url;
     }
 
-    final completer = Completer<String?>();
-    int pending = 5;
-
-    void tryComplete(String? url) {
-      if (!completer.isCompleted && url != null && url.isNotEmpty) {
-        _cacheStreamUrl(cleanId, url);
-        completer.complete(url);
-      } else {
-        pending--;
-        if (pending <= 0 && !completer.isCompleted) {
-          completer.complete(null);
+    // 2. Direct Official Stream via youtube_explode_dart (pure Dart, cipher deciphered, no proxies)
+    try {
+      final manifest = await _ytExplode.videos.streamsClient.getManifest(cleanId).timeout(const Duration(seconds: 5));
+      final audioStreams = manifest.audioOnly;
+      if (audioStreams.isNotEmpty) {
+        final audioStream = audioStreams.withHighestBitrate();
+        final streamUrl = audioStream.url.toString();
+        if (streamUrl.isNotEmpty) {
+          _cacheStreamUrl(cleanId, streamUrl);
+          return streamUrl;
         }
       }
+      final muxedStreams = manifest.muxed;
+      if (muxedStreams.isNotEmpty) {
+        final muxedStream = muxedStreams.withHighestBitrate();
+        final streamUrl = muxedStream.url.toString();
+        if (streamUrl.isNotEmpty) {
+          _cacheStreamUrl(cleanId, streamUrl);
+          return streamUrl;
+        }
+      }
+    } catch (e) {
+      debugPrint('[YouTubeService] YoutubeExplode stream error: $e');
     }
 
-    // 1. Concurrent Innertube Android client (~200ms)
-    _resolveInnertubePlayer(cleanId, clientName: 'ANDROID', clientVersion: '19.09.37')
-        .then((url) => tryComplete(url))
-        .catchError((_) => tryComplete(null));
+    // 3. Fallback: Fast Public Mirror Racing
+    try {
+      final mirrorStream = await _raceFastStreamInstances(cleanId);
+      if (mirrorStream != null && mirrorStream.isNotEmpty) {
+        _cacheStreamUrl(cleanId, mirrorStream);
+        return mirrorStream;
+      }
+    } catch (_) {}
 
-    // 2. Concurrent Innertube iOS client
-    _resolveInnertubePlayer(cleanId, clientName: 'IOS', clientVersion: '19.29.1')
-        .then((url) => tryComplete(url))
-        .catchError((_) => tryComplete(null));
-
-    // 3. Concurrent Innertube TV client (direct unthrottled stream)
-    _resolveInnertubePlayer(cleanId, clientName: 'TVHTML5_SIMPLY_EMBEDDED', clientVersion: '2.0')
-        .then((url) => tryComplete(url))
-        .catchError((_) => tryComplete(null));
-
-    // 4. Concurrent Piped fast stream
-    _fetchPipedFastStream(cleanId)
-        .then((url) => tryComplete(url))
-        .catchError((_) => tryComplete(null));
-
-    // 5. Concurrent Invidious fast stream
-    _fetchInvidiousFastStream(cleanId)
-        .then((url) => tryComplete(url))
-        .catchError((_) => tryComplete(null));
-
-    // Global race timeout: 3.5 seconds
-    final result = await completer.future.timeout(
-      const Duration(milliseconds: 3500),
-      onTimeout: () => null,
-    );
-
-    if (result != null && result.isNotEmpty) {
-      return result;
-    }
-
-    // Fallback: PC Server proxy if configured
+    // 4. Fallback: PC Server proxy if configured
     if (_serverHost.isNotEmpty) {
       return '$_serverHost/api/youtube/stream/$cleanId';
     }
@@ -345,109 +338,55 @@ class YouTubeService {
     return null;
   }
 
-  /// Direct YouTube Official Player API
-  Future<String?> _resolveInnertubePlayer(String videoId, {required String clientName, required String clientVersion}) async {
-    final url = Uri.parse('https://www.youtube.com/youtubei/v1/player');
-    final payload = {
-      'context': {
-        'client': {
-          'clientName': clientName,
-          'clientVersion': clientVersion,
-          'hl': 'en',
-          'gl': 'US',
-          if (clientName == 'ANDROID') 'androidSdkVersion': 30,
-        }
-      },
-      'videoId': videoId,
-    };
-
-    final headers = {
-      'Content-Type': 'application/json',
-      'User-Agent': clientName == 'ANDROID'
-          ? 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip'
-          : clientName == 'IOS'
-              ? 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)'
-              : 'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7',
-    };
-
-    final response = await http
-        .post(url, headers: headers, body: json.encode(payload))
-        .timeout(const Duration(milliseconds: 3200));
-
-    if (response.statusCode != 200) return null;
-
-    final data = json.decode(response.body);
-    final streamingData = data['streamingData'];
-    if (streamingData == null) return null;
-
-    final adaptiveFormats = streamingData['adaptiveFormats'] as List<dynamic>? ?? [];
-
-    // Filter audio formats
-    final audioFormats = adaptiveFormats.where((f) {
-      final mime = f['mimeType'] as String? ?? '';
-      final directUrl = f['url'] as String? ?? '';
-      return mime.startsWith('audio/') && directUrl.isNotEmpty;
-    }).toList();
-
-    if (audioFormats.isNotEmpty) {
-      // Sort by bitrate desc to get highest quality audio
-      audioFormats.sort((a, b) => ((b['bitrate'] as int? ?? 0)).compareTo(a['bitrate'] as int? ?? 0));
-      return audioFormats.first['url'] as String?;
-    }
-
-    // Direct format fallback (ExoPlayer plays audio directly from MP4 stream)
-    final formats = streamingData['formats'] as List<dynamic>? ?? [];
-    for (final f in formats) {
-      final directUrl = f['url'] as String? ?? '';
-      if (directUrl.isNotEmpty) {
-        return directUrl;
-      }
-    }
-
-    return null;
-  }
-
-  Future<String?> _fetchPipedFastStream(String videoId) async {
-    final pipedInstances = [
+  /// Fast racing across multiple public mirrors simultaneously
+  Future<String?> _raceFastStreamInstances(String videoId) async {
+    final endpoints = [
+      'https://pipedapi.leptons.xyz/streams/$videoId',
       'https://pipedapi.kavin.rocks/streams/$videoId',
       'https://api.piped.privacydev.net/streams/$videoId',
-    ];
-    for (final ep in pipedInstances) {
-      try {
-        final res = await http.get(Uri.parse(ep)).timeout(const Duration(milliseconds: 2800));
-        if (res.statusCode == 200) {
-          final data = json.decode(res.body);
-          final audioStreams = data['audioStreams'] as List<dynamic>? ?? [];
-          if (audioStreams.isNotEmpty) {
-            final url = audioStreams.first['url'] as String?;
-            if (url != null && url.isNotEmpty) return url;
-          }
-        }
-      } catch (_) {}
-    }
-    return null;
-  }
-
-  Future<String?> _fetchInvidiousFastStream(String videoId) async {
-    final invidiousInstances = [
-      'https://invidious.nerdvpn.de/api/v1/videos/$videoId',
       'https://inv.nadeko.net/api/v1/videos/$videoId',
+      'https://invidious.nerdvpn.de/api/v1/videos/$videoId',
+      'https://invidious.jing.rocks/api/v1/videos/$videoId',
     ];
-    for (final ep in invidiousInstances) {
-      try {
-        final res = await http.get(Uri.parse(ep)).timeout(const Duration(milliseconds: 2800));
-        if (res.statusCode == 200) {
+
+    final completer = Completer<String?>();
+    int pending = endpoints.length;
+
+    for (final ep in endpoints) {
+      http.get(Uri.parse(ep)).timeout(const Duration(seconds: 4)).then((res) {
+        if (!completer.isCompleted && res.statusCode == 200) {
           final data = json.decode(res.body);
-          final adaptiveFormats = data['adaptiveFormats'] as List<dynamic>? ?? [];
-          for (final f in adaptiveFormats) {
-            final type = f['type'] as String? ?? '';
-            final url = f['url'] as String? ?? '';
-            if (type.contains('audio') && url.isNotEmpty) return url;
+          // Try Piped structure
+          final audioStreams = data['audioStreams'] as List<dynamic>?;
+          if (audioStreams != null && audioStreams.isNotEmpty) {
+            final url = audioStreams.first['url'] as String?;
+            if (url != null && url.isNotEmpty) {
+              completer.complete(url);
+              return;
+            }
+          }
+          // Try Invidious structure
+          final adaptiveFormats = data['adaptiveFormats'] as List<dynamic>?;
+          if (adaptiveFormats != null && adaptiveFormats.isNotEmpty) {
+            for (final f in adaptiveFormats) {
+              final type = f['type'] as String? ?? '';
+              final url = f['url'] as String? ?? '';
+              if (type.contains('audio') && url.isNotEmpty) {
+                completer.complete(url);
+                return;
+              }
+            }
           }
         }
-      } catch (_) {}
+      }).catchError((_) {}).whenComplete(() {
+        pending--;
+        if (pending <= 0 && !completer.isCompleted) {
+          completer.complete(null);
+        }
+      });
     }
-    return null;
+
+    return completer.future.timeout(const Duration(seconds: 4), onTimeout: () => null);
   }
 
   void _cacheStreamUrl(String videoId, String url) {

@@ -93,15 +93,8 @@ class LinusAudioHandler extends BaseAudioHandler with SeekHandler {
       if (track.filePath.startsWith('http://') ||
           track.filePath.startsWith('https://') ||
           track.filePath.startsWith('content://')) {
-        final uri = Uri.parse(track.filePath);
-        final headers = track.isYouTube
-            ? {
-                'User-Agent':
-                    'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
-              }
-            : null;
         await _player.setAudioSource(
-          AudioSource.uri(uri, headers: headers, tag: track.toMediaItem()),
+          AudioSource.uri(Uri.parse(track.filePath), tag: track.toMediaItem()),
           preload: true,
         );
       } else {

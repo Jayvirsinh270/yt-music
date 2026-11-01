@@ -1,0 +1,34 @@
+# Linus Music Player — Docker Compose
+# Run with: docker-compose up
+# Or detached: docker-compose up -d
+
+version: "3.9"
+
+services:
+  linus:
+    build: .
+    container_name: linus-music
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist your music library, downloads, and generated caches across restarts
+      - ./downloads:/app/downloads
+      - ./stream_cache:/app/stream_cache
+      - ./lyrics_cache:/app/lyrics_cache
+      - ./linus.db:/app/linus.db
+      # Mount your local music folder here:
+      # - /path/to/your/music:/music:ro
+    environment:
+      - LINUS_HOST=0.0.0.0
+      - LINUS_PORT=5000
+      # Uncomment to enable authenticated YouTube access:
+      # - YOUTUBE_COOKIE_FILE=/app/cookies.txt
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

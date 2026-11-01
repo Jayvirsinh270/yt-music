@@ -1,0 +1,58 @@
+      <div id="playlists-view" class="view hidden">
+        <!-- 1. Playlists Grid Overview -->
+        <div id="playlists-overview">
+          <!-- Smart Autoplaylists (Dynamic) -->
+          <div class="smart-playlists-section" id="smart-playlists-section" style="margin-bottom: 36px;">
+            <div class="section-heading" style="margin-bottom: 16px;">
+              <div>
+                <p class="eyebrow" style="color:var(--accent);display:inline-flex;align-items:center;gap:6px;"><i class="ph-fill ph-sparkle"></i> INTELLIGENT CURATION</p>
+                <h3 style="font-size:1.4rem;font-weight:700;margin:2px 0 0;">Smart Autoplaylists</h3>
+                <p class="muted" style="font-size:0.85rem;">Dynamic rule-based collections that update automatically with your habits & tempo</p>
+              </div>
+            </div>
+            <div class="playlist-grid" id="smart-playlists-list"></div>
+          </div>
+
+          <!-- User Custom & Folder Playlists -->
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">COLLECTION</p>
+              <h2>My Playlists & Folders</h2>
+              <p class="muted">Your curated selections</p>
+            </div>
+            <div class="heading-actions">
+              <button class="btn-secondary" id="import-yt-playlist-btn" style="display:inline-flex;align-items:center;gap:6px;"><i class="ph-fill ph-youtube-logo" style="color:#ff4444;"></i> Import YouTube Playlist</button>
+              <button class="btn-primary" id="new-playlist"><i class="ph ph-plus"></i> Create Playlist</button>
+            </div>
+          </div>
+          <div class="playlist-grid" id="playlist-list"></div>
+        </div>
+
+        <!-- 2. Single Playlist Details View -->
+        <div id="playlist-detail-view" class="hidden">
+          <div class="playlist-detail-header">
+            <button class="round-action" id="playlist-back-btn" title="Back to All Playlists"><i class="ph ph-arrow-left"></i></button>
+            <div class="playlist-detail-cover" id="playlist-detail-cover">
+              <i class="ph-fill ph-playlist"></i>
+            </div>
+            <div class="playlist-detail-meta">
+              <p class="eyebrow" style="margin:0;">PLAYLIST</p>
+              <h1 id="playlist-detail-title" class="playlist-detail-title">Playlist Title</h1>
+              <p class="muted" id="playlist-detail-stats">0 tracks · 0 min</p>
+              <div class="playlist-detail-actions">
+                <button class="btn-primary" id="playlist-detail-play"><i class="ph-fill ph-play-circle"></i> Play</button>
+                <button class="btn-secondary" id="playlist-detail-shuffle"><i class="ph ph-shuffle"></i> Shuffle</button>
+                <button class="btn-secondary btn-danger-hover" id="playlist-detail-delete"><i class="ph ph-trash"></i> Delete</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="track-table" id="playlist-track-list"></div>
+          
+          <div class="empty-state hidden" id="playlist-detail-empty" style="padding: 60px 20px;">
+            <i class="ph-fill ph-music-notes-plus empty-icon" style="color:var(--accent);font-size:44px;"></i>
+            <h3>This playlist is empty.</h3>
+            <p>Add songs from your library or currently playing track using the <i class="ph ph-plus-circle"></i> icon.</p>
+          </div>
+        </div>
+      </div>

@@ -1,0 +1,74 @@
+  <dialog id="download-sheet">
+    <form method="dialog" id="download-form">
+      <div class="dialog-header">
+        <div><p class="eyebrow">ACQUIRE</p><h2>Download</h2></div>
+        <button class="round-action" value="cancel"><i class="ph ph-x"></i></button>
+      </div>
+      
+      <div class="type-toggle">
+        <button type="button" class="type-btn active" id="type-audio"><i class="ph ph-music-notes"></i> Audio</button>
+        <button type="button" class="type-btn" id="type-video"><i class="ph ph-film-strip"></i> Video</button>
+      </div>
+
+      <div class="field-group">
+        <label for="download-url">URL</label>
+        <input class="field-input" id="download-url" type="url" placeholder="https://..." required>
+      </div>
+      <div class="field-group">
+        <label for="download-category">Category (Optional)</label>
+        <input class="field-input" id="download-category" type="text" placeholder="e.g. Lofi, Jazz">
+      </div>
+
+      <!-- Audio Options -->
+      <div id="audio-options">
+        <div class="field-group">
+          <label>Format</label>
+          <select class="field-input" id="download-format">
+            <option value="mp3">MP3</option>
+            <option value="m4a">M4A</option>
+            <option value="flac">FLAC</option>
+            <option value="wav">WAV</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Quality</label>
+          <select class="field-input" id="download-quality">
+            <option value="128">128 kbps</option>
+            <option value="192" selected>192 kbps</option>
+            <option value="320">320 kbps</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Video Options -->
+      <div id="video-options" class="hidden">
+        <div class="field-group">
+          <label>Container</label>
+          <select class="field-input" id="download-video-format">
+            <option value="mp4" selected>MP4</option>
+            <option value="webm">WebM</option>
+            <option value="mkv">MKV</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Resolution</label>
+          <select class="field-input" id="download-video-quality">
+            <option value="480">480p</option>
+            <option value="720" selected>720p</option>
+            <option value="1080">1080p</option>
+            <option value="best">Best available</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="field-group hidden" id="dl-progress-wrap">
+        <div class="dl-progress-bar"><div class="dl-progress-fill" id="dl-progress-fill"></div></div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:8px;" id="dl-progress-label">Starting...</p>
+      </div>
+
+      <button class="btn-primary btn-full" id="download-submit">Download</button>
+      <button type="button" class="btn-primary btn-full hidden" id="download-cancel" style="background:#ff4d4d;margin-top:10px;">Cancel Download</button>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:16px;text-align:center;" id="download-note">Saved to downloads folder.</p>
+    </form>
+  </dialog>

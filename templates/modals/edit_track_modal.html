@@ -1,0 +1,57 @@
+  <dialog id="edit-track-sheet" class="edit-track-sheet">
+    <div class="edit-track-container">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">TAG EDITOR</p>
+          <h2>Edit Track Metadata</h2>
+        </div>
+        <button class="round-action" id="edit-track-close"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div class="edit-track-layout">
+        <!-- Artwork Upload Box -->
+        <div class="edit-art-col">
+          <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Album Cover</label>
+          <div class="edit-art-preview" id="edit-art-preview">
+            <i class="ph-fill ph-image" id="edit-art-icon" style="font-size:40px;color:var(--text-muted);"></i>
+            <img id="edit-art-img" class="hidden" alt="Cover Preview">
+            <div class="edit-art-overlay">
+              <i class="ph ph-camera"></i>
+              <span>Change Art</span>
+            </div>
+          </div>
+          <input type="file" id="edit-art-input" accept="image/png, image/jpeg, image/webp" class="hidden">
+        </div>
+
+        <!-- Metadata Form Inputs -->
+        <div class="edit-fields-col">
+          <input type="hidden" id="edit-track-id">
+          
+          <div class="field-group">
+            <label for="edit-track-title">Title</label>
+            <input class="field-input" id="edit-track-title" type="text" placeholder="Song title" required>
+          </div>
+
+          <div class="field-group">
+            <label for="edit-track-artist">Artist</label>
+            <input class="field-input" id="edit-track-artist" type="text" placeholder="Artist name">
+          </div>
+
+          <div class="field-group">
+            <label for="edit-track-album">Album</label>
+            <input class="field-input" id="edit-track-album" type="text" placeholder="Album name">
+          </div>
+
+          <div class="field-group">
+            <label for="edit-track-category">Category / Mood Tag</label>
+            <input class="field-input" id="edit-track-category" type="text" placeholder="e.g. Chill, Workout, Anime">
+          </div>
+        </div>
+      </div>
+
+      <div class="eq-footer" style="display:flex;justify-content:flex-end;gap:12px;margin-top:12px;">
+        <button class="btn-secondary" id="edit-track-cancel-btn">Cancel</button>
+        <button class="btn-primary" id="edit-track-save-btn"><i class="ph ph-floppy-disk"></i> Save Changes</button>
+      </div>
+    </div>
+  </dialog>

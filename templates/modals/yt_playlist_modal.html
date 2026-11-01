@@ -1,0 +1,59 @@
+  <dialog id="yt-playlist-import-modal" class="modal-sheet" style="max-width: 580px; width: 92vw;">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow" style="margin:0;"><i class="ph-fill ph-youtube-logo" style="color:#ff4444;"></i> YOUTUBE IMPORTER</p>
+        <h2 style="font-size:22px;margin:4px 0 0;">Import YouTube Playlist</h2>
+      </div>
+      <button type="button" class="round-action" id="yt-playlist-modal-close"><i class="ph ph-x"></i></button>
+    </div>
+
+    <!-- Step 1: Input URL -->
+    <div id="yt-pl-step-url" style="margin-top:14px;">
+      <p class="muted" style="font-size:13px;margin:0 0 16px;">Paste any public or unlisted YouTube / YouTube Music playlist URL to import into Linus.</p>
+      <div class="field-group">
+        <label for="yt-playlist-url-input">Playlist URL</label>
+        <div style="display:flex;gap:8px;">
+          <input type="url" id="yt-playlist-url-input" class="field-input" placeholder="https://www.youtube.com/playlist?list=..." style="flex:1;">
+          <button type="button" class="btn-primary" id="yt-playlist-fetch-btn" style="white-space:nowrap;display:flex;align-items:center;gap:6px;">
+            <i class="ph-bold ph-magnifying-glass"></i> Fetch Tracks
+          </button>
+        </div>
+      </div>
+      <div id="yt-pl-fetch-loading" class="hidden" style="text-align:center;padding:24px 0;color:var(--text-muted);">
+        <div class="spinner" style="margin:0 auto 12px;width:26px;height:26px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <span style="font-size:13px;">Extracting playlist tracks from YouTube...</span>
+      </div>
+    </div>
+
+    <!-- Step 2: Preview & Import -->
+    <div id="yt-pl-step-preview" class="hidden" style="margin-top:16px;">
+      <div class="yt-pl-preview-card" style="display:flex;align-items:center;gap:14px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;">
+        <img id="yt-pl-preview-thumb" src="" alt="Cover" style="width:68px;height:68px;border-radius:8px;object-fit:cover;background:rgba(0,0,0,0.3);flex-shrink:0;">
+        <div style="flex:1;min-width:0;">
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">Playlist Name</label>
+          <input type="text" id="yt-pl-name-input" class="field-input" style="font-weight:600;font-size:14px;padding:6px 10px;margin-bottom:6px;" placeholder="Playlist name">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);">
+            <span id="yt-pl-uploader-label">Uploader</span>
+            <span>•</span>
+            <span id="yt-pl-count-badge" style="color:var(--accent);font-weight:600;">0 tracks</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Track Preview List -->
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <span>Tracks to import</span>
+        <span id="yt-pl-preview-duration">0 min</span>
+      </div>
+      <div id="yt-pl-tracks-preview-list" class="yt-pl-tracks-list" style="max-height:220px;overflow-y:auto;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:10px;padding:6px;margin-bottom:18px;">
+        <!-- Dynamic track items -->
+      </div>
+
+      <div class="dialog-actions" style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
+        <button type="button" class="btn-secondary" id="yt-pl-back-btn">Back</button>
+        <button type="button" class="btn-primary" id="yt-pl-import-stream-btn" style="background:linear-gradient(135deg,#e5a95d,#c48d42);color:#121212;font-weight:600;display:flex;align-items:center;gap:6px;">
+          <i class="ph-bold ph-lightning"></i> Import & Stream Now
+        </button>
+      </div>
+    </div>
+  </dialog>

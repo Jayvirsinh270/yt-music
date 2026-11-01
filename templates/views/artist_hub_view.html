@@ -1,0 +1,97 @@
+<div id="artist-hub-view" class="view hidden">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">DISCOGRAPHY & PROFILES</p>
+      <h2>Artists & Albums</h2>
+      <p class="muted">Explore deep discographies, album tracklists, and artist catalogs</p>
+    </div>
+    <div class="artist-hub-tabs">
+      <button class="filter-tab active" id="tab-artists-btn"><i class="ph ph-microphone-stage"></i> Artists</button>
+      <button class="filter-tab" id="tab-albums-btn"><i class="ph ph-disc"></i> Albums</button>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="artist-hub-filter-bar">
+    <div class="artist-hub-search-box">
+      <i class="ph ph-magnifying-glass"></i>
+      <input type="text" id="artist-hub-search-input" placeholder="Filter artists or albums..." autocomplete="off">
+    </div>
+    <span class="muted text-sm" id="artist-hub-count-label">Loading catalog...</span>
+  </div>
+
+  <!-- Main Catalog Views Container -->
+  <div id="artist-hub-main-container">
+    <!-- Artists Grid Section -->
+    <div id="artist-hub-artists-section">
+      <div id="artists-grid" class="artists-grid"></div>
+    </div>
+
+    <!-- Albums Grid Section -->
+    <div id="artist-hub-albums-section" class="hidden">
+      <div id="albums-grid" class="albums-grid"></div>
+    </div>
+  </div>
+
+  <!-- Artist Profile Detail View (Populated on click) -->
+  <div id="artist-profile-panel" class="artist-profile-panel hidden">
+    <button class="soft-button mb-4" id="artist-profile-back-btn">
+      <i class="ph-bold ph-arrow-left"></i> Back to Artists
+    </button>
+    <div class="artist-hero-card">
+      <div class="artist-hero-avatar-wrap">
+        <img id="artist-hero-avatar" class="artist-hero-avatar" src="" alt="Artist Artwork">
+        <div class="artist-hero-avatar-placeholder hidden" id="artist-hero-placeholder"><i class="ph-fill ph-user"></i></div>
+      </div>
+      <div class="artist-hero-info">
+        <span class="eyebrow">ARTIST PROFILE</span>
+        <h1 id="artist-hero-name" class="artist-hero-title">Artist Name</h1>
+        <p class="muted" id="artist-hero-stats">0 Tracks • 0 Albums</p>
+        <div class="artist-hero-actions">
+          <button class="btn-primary" id="artist-play-all-btn"><i class="ph-fill ph-play"></i> Play All</button>
+          <button class="soft-button" id="artist-shuffle-btn"><i class="ph-bold ph-shuffle"></i> Shuffle</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="artist-profile-content">
+      <div class="artist-section-block">
+        <h3 class="section-title"><i class="ph-fill ph-fire"></i> Top Tracks</h3>
+        <div id="artist-top-tracks-list" class="tracks-list"></div>
+      </div>
+
+      <div class="artist-section-block mt-6">
+        <h3 class="section-title"><i class="ph-fill ph-vinyl-record"></i> Discography & Albums</h3>
+        <div id="artist-discography-grid" class="albums-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Album Detail View (Populated on click) -->
+  <div id="album-detail-panel" class="album-detail-panel hidden">
+    <button class="soft-button mb-4" id="album-detail-back-btn">
+      <i class="ph-bold ph-arrow-left"></i> Back to Albums
+    </button>
+    <div class="album-hero-card">
+      <div class="album-hero-cover-wrap">
+        <img id="album-hero-cover" class="album-hero-cover" src="" alt="Album Cover">
+        <div class="album-hero-cover-placeholder hidden" id="album-hero-placeholder"><i class="ph-fill ph-disc"></i></div>
+      </div>
+      <div class="album-hero-info">
+        <span class="eyebrow">ALBUM</span>
+        <h1 id="album-hero-title" class="album-hero-title">Album Title</h1>
+        <p class="muted" id="album-hero-artist">by Artist Name</p>
+        <p class="muted text-sm" id="album-hero-stats">0 Tracks • 0:00 Total</p>
+        <div class="album-hero-actions">
+          <button class="btn-primary" id="album-play-all-btn"><i class="ph-fill ph-play"></i> Play Album</button>
+          <button class="soft-button" id="album-shuffle-btn"><i class="ph-bold ph-shuffle"></i> Shuffle</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="album-tracklist-section mt-6">
+      <h3 class="section-title"><i class="ph-fill ph-list-numbers"></i> Tracklist</h3>
+      <div id="album-tracks-list" class="tracks-list"></div>
+    </div>
+  </div>
+</div>

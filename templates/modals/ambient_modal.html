@@ -1,0 +1,155 @@
+  <dialog id="ambient-sheet" class="ambient-sheet">
+    <div class="ambient-container">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow"><i class="ph-fill ph-waves"></i> AUDIOPHILE SOUNDSTAGE & ATMOSPHERE</p>
+          <h2>Lofi Zen Soundscape Mixer</h2>
+        </div>
+        <button class="round-action" id="ambient-close" title="Close"><i class="ph ph-x"></i></button>
+      </div>
+
+      <!-- Zen Master Controls & Presets -->
+      <div class="zen-master-strip">
+        <div class="zen-presets-header">
+          <span class="zen-section-title"><i class="ph-bold ph-sparkle"></i> ATMOSPHERE PRESETS</span>
+          <span class="zen-active-preset-badge" id="zen-active-preset-badge">Custom Mix</span>
+        </div>
+        <div class="zen-presets-row">
+          <button class="zen-preset-pill" data-preset="rainy_cafe"><i class="ph-fill ph-coffee"></i> Rainy Cafe</button>
+          <button class="zen-preset-pill" data-preset="late_night"><i class="ph-fill ph-moon"></i> Late Night Study</button>
+          <button class="zen-preset-pill" data-preset="fireside"><i class="ph-fill ph-fire"></i> Fireside Cabin</button>
+          <button class="zen-preset-pill" data-preset="deep_zen"><i class="ph-fill ph-leaf"></i> Deep Meditation</button>
+          <button class="zen-preset-pill" data-preset="ocean_breeze"><i class="ph-fill ph-waves"></i> Oceanic Coast</button>
+        </div>
+
+        <!-- Master Soundstage Balance Slider -->
+        <div class="zen-balance-card">
+          <div class="zen-balance-header">
+            <div>
+              <strong>Music vs Atmosphere Balance</strong>
+              <span class="ambient-sub" id="zen-balance-sub">80% Music · 20% Ambient Layer</span>
+            </div>
+            <span class="ambient-vol-val" id="zen-balance-val">Balanced</span>
+          </div>
+          <div class="zen-balance-slider-row">
+            <span class="zen-slider-endlabel"><i class="ph-bold ph-music-note"></i> Pure Music</span>
+            <input type="range" class="ambient-slider" id="zen-balance-slider" min="0" max="1" step="0.05" value="0.2">
+            <span class="zen-slider-endlabel"><i class="ph-bold ph-cloud-rain"></i> Pure Atmosphere</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 Audiophile Ambient Soundscape Mixers -->
+      <div class="ambient-mixers-grid">
+        <!-- 1. Rain on Glass -->
+        <div class="ambient-card" id="card-rain">
+          <div class="ambient-card-top">
+            <div class="ambient-icon-box"><i class="ph-fill ph-cloud-rain"></i></div>
+            <div>
+              <strong>Rain on Glass</strong>
+              <span class="ambient-sub">Cozy drizzle & window drops</span>
+            </div>
+            <span class="ambient-vol-val" id="vol-rain-val">0%</span>
+          </div>
+          <input type="range" class="ambient-slider" id="ambient-rain-slider" min="0" max="1" step="0.05" value="0">
+        </div>
+
+        <!-- 2. Analog Vinyl Crackle -->
+        <div class="ambient-card" id="card-vinyl">
+          <div class="ambient-card-top">
+            <div class="ambient-icon-box"><i class="ph-fill ph-disc"></i></div>
+            <div>
+              <strong>Vinyl Crackle</strong>
+              <span class="ambient-sub">Warm analog turntable needle</span>
+            </div>
+            <span class="ambient-vol-val" id="vol-vinyl-val">0%</span>
+          </div>
+          <input type="range" class="ambient-slider" id="ambient-vinyl-slider" min="0" max="1" step="0.05" value="0">
+        </div>
+
+        <!-- 3. Vinyl Hearth Fireplace -->
+        <div class="ambient-card" id="card-fire">
+          <div class="ambient-card-top">
+            <div class="ambient-icon-box"><i class="ph-fill ph-fire"></i></div>
+            <div>
+              <strong>Hearth Fireplace</strong>
+              <span class="ambient-sub">Crackling embers & wood snaps</span>
+            </div>
+            <span class="ambient-vol-val" id="vol-fire-val">0%</span>
+          </div>
+          <input type="range" class="ambient-slider" id="ambient-fire-slider" min="0" max="1" step="0.05" value="0">
+        </div>
+
+        <!-- 4. Ocean Tide & Waves -->
+        <div class="ambient-card" id="card-ocean">
+          <div class="ambient-card-top">
+            <div class="ambient-icon-box"><i class="ph-fill ph-waves"></i></div>
+            <div>
+              <strong>Ocean Tide</strong>
+              <span class="ambient-sub">Deep stereophonic shore waves</span>
+            </div>
+            <span class="ambient-vol-val" id="vol-ocean-val">0%</span>
+          </div>
+          <input type="range" class="ambient-slider" id="ambient-ocean-slider" min="0" max="1" step="0.05" value="0">
+        </div>
+
+        <!-- 5. Night Breeze & Forest -->
+        <div class="ambient-card" id="card-wind">
+          <div class="ambient-card-top">
+            <div class="ambient-icon-box"><i class="ph-fill ph-tree"></i></div>
+            <div>
+              <strong>Night Forest</strong>
+              <span class="ambient-sub">Evening wind & distant crickets</span>
+            </div>
+            <span class="ambient-vol-val" id="vol-wind-val">0%</span>
+          </div>
+          <input type="range" class="ambient-slider" id="ambient-wind-slider" min="0" max="1" step="0.05" value="0">
+        </div>
+
+        <!-- 6. Binaural Alpha Beats (Focus / Relaxation) -->
+        <div class="ambient-card" id="card-binaural">
+          <div class="ambient-card-top">
+            <div class="ambient-icon-box"><i class="ph-fill ph-brain"></i></div>
+            <div>
+              <strong>Binaural Soundwave</strong>
+              <span class="ambient-sub" id="binaural-freq-label">10Hz Alpha Focus Waves</span>
+            </div>
+            <span class="ambient-vol-val" id="vol-binaural-val">0%</span>
+          </div>
+          <input type="range" class="ambient-slider" id="ambient-binaural-slider" min="0" max="1" step="0.05" value="0">
+          <div class="binaural-types-row">
+            <button class="binaural-type-pill active" data-hz="10" title="10Hz Alpha: Flow State & Studying">Alpha (10Hz)</button>
+            <button class="binaural-type-pill" data-hz="6" title="6Hz Theta: Deep Relaxation & Creativity">Theta (6Hz)</button>
+            <button class="binaural-type-pill" data-hz="2" title="2Hz Delta: Deep Sleep & Rejuvenation">Delta (2Hz)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sleep Timer Section -->
+      <div class="sleep-timer-card">
+        <div class="sleep-timer-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="sleep-icon-wrap"><i class="ph-fill ph-moon-stars"></i></div>
+            <div>
+              <strong>Fade-Out Sleep Timer</strong>
+              <p class="ambient-sub">Gently dims music and shuts down playback</p>
+            </div>
+          </div>
+          <span class="sleep-status-badge" id="sleep-timer-badge">Off</span>
+        </div>
+
+        <div class="sleep-presets-row">
+          <button class="sleep-preset-btn" data-minutes="15">15 Min</button>
+          <button class="sleep-preset-btn" data-minutes="30">30 Min</button>
+          <button class="sleep-preset-btn" data-minutes="45">45 Min</button>
+          <button class="sleep-preset-btn" data-minutes="60">60 Min</button>
+          <button class="sleep-preset-btn btn-danger hidden" id="sleep-cancel-btn"><i class="ph ph-stop"></i> Cancel Timer</button>
+        </div>
+      </div>
+
+      <div class="eq-footer" style="justify-content:space-between;align-items:center;">
+        <span class="ambient-sub" id="ambient-active-layers-summary"><i class="ph-bold ph-circle"></i> Atmosphere Idle</span>
+        <button class="btn-secondary" id="ambient-mute-all-btn"><i class="ph ph-speaker-slash"></i> Mute Atmosphere</button>
+      </div>
+    </div>
+  </dialog>

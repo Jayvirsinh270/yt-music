@@ -1,0 +1,53 @@
+      <div id="explore-view" class="view hidden">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">ONLINE DISCOVERY</p>
+            <h2>Explore & Search YouTube</h2>
+            <p class="muted">Search any song, artist or video worldwide and download in 1-click</p>
+          </div>
+        </div>
+
+        <div class="explore-search-bar">
+          <i class="ph ph-magnifying-glass explore-search-icon"></i>
+          <input type="text" id="explore-input" placeholder="Search YouTube for songs, artists, lofi, anime OSTs..." autocomplete="off">
+          <button class="btn-primary" id="explore-submit-btn"><i class="ph ph-arrow-right"></i> Search</button>
+        </div>
+
+        <div class="explore-quick-tags">
+          <span class="explore-tag" data-q="Trending English Pop Hits 2024">🔥 Pop Hits</span>
+          <span class="explore-tag" data-q="Lofi Hip Hop Chill Beats To Relax">☕ Lofi Chill</span>
+          <span class="explore-tag" data-q="Bollywood Superhits 2024">✨ Bollywood</span>
+          <span class="explore-tag" data-q="Punjabi Top Hits 2024">⚡ Punjabi</span>
+          <span class="explore-tag" data-q="Synthwave Chillwave Cyberpunk">🌆 Synthwave</span>
+          <span class="explore-tag" data-q="Anime OST Epic Soundtracks">⚔️ Anime OSTs</span>
+          <span class="explore-tag" data-q="EDM Festival Drops">🎧 EDM</span>
+        </div>
+
+        <!-- Daily Musical Reflection Card -->
+        <div class="explore-quote-card" id="explore-quote-card">
+          <div class="explore-quote-glow"></div>
+          <div class="explore-quote-icon"><i class="ph-fill ph-quotes"></i></div>
+          <div class="explore-quote-content">
+            <span class="explore-quote-badge"><i class="ph-fill ph-sparkle"></i> THOUGHT FOR TODAY</span>
+            <p class="explore-quote-text" id="explore-quote-text">“Where words fail, music speaks.”</p>
+            <cite class="explore-quote-author" id="explore-quote-author">- Hans Christian Andersen</cite>
+          </div>
+          <button type="button" class="explore-quote-refresh-btn" id="explore-quote-refresh-btn" title="Discover another reflection">
+            <i class="ph-bold ph-shuffle"></i>
+          </button>
+        </div>
+
+        <div id="explore-loading" class="explore-loading-state hidden">
+          <i class="ph ph-spinner-gap spinning"></i>
+          <p>Searching YouTube worldwide...</p>
+        </div>
+
+        <div id="explore-results" class="explore-grid"></div>
+
+        <div id="explore-load-more" class="explore-load-more hidden">
+          <button id="explore-load-more-btn" class="btn-load-more">
+            <i class="ph ph-arrow-down"></i>
+            <span>Load More</span>
+          </button>
+        </div>
+      </div>

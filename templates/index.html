@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Linus | Aesthetic Listening</title>
+
+  <!-- PWA: Manifest & Theme -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Linus">
+  <meta name="description" content="Your personal self-hosted music hub: local library, YouTube streaming, smart recommendations, synced lyrics and DJ tools.">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  
+  <!-- Typography & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Consolidated Stylesheet -->
+  <link rel="stylesheet" href="/static/styles.css?v=8.4">
+  <link rel="stylesheet" href="/static/dj_styles.css?v=1.3">
+  <link rel="stylesheet" href="/static/tour.css?v=1.0">
+  <link rel="stylesheet" href="/static/artist_hub.css?v=1.0">
+  <link rel="stylesheet" href="/static/auth.css?v=1.0">
+  <link rel="stylesheet" href="/static/podcasts.css?v=1.0">
+</head>
+<body>
+  {% include 'components/quote_splash.html' %}
+
+  <div class="bg-mesh"></div>
+  <!-- Living Breathing Ambient Aura Canvas -->
+  <canvas id="living-aura-canvas" class="living-aura-canvas"></canvas>
+  <!-- Dedicated Real-Time Procedural Live Motion Canvas Engine -->
+  <canvas id="live-motion-canvas" class="live-wallpaper-video hidden"></canvas>
+  <!-- Live Video Wallpaper Engine -->
+  <video id="live-wallpaper-video" class="live-wallpaper-video hidden" loop muted playsinline autoplay></video>
+  <!-- Custom Photo Wallpaper Engine -->
+  <div id="custom-wallpaper-bg" class="custom-wallpaper-bg hidden"></div>
+  <!-- Dynamic Dim Overlay -->
+  <div id="wallpaper-dim-overlay" class="wallpaper-dim-overlay"></div>
+  <div id="vibe-confetti-container" class="vibe-confetti-container"></div>
+  
+  <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    {% include 'components/sidebar.html' %}
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      {% include 'components/header.html' %}
+
+      {% include 'views/library_view.html' %}
+      {% include 'views/explore_view.html' %}
+      {% include 'views/videos_view.html' %}
+      {% include 'views/playlists_view.html' %}
+      {% include 'views/favorites_view.html' %}
+      {% include 'views/lyrics_view.html' %}
+      {% include 'views/downloads_view.html' %}
+      {% include 'views/dj_studio_view.html' %}
+      {% include 'views/artist_hub_view.html' %}
+      {% include 'views/podcasts_view.html' %}
+    </main>
+  </div>
+
+  {% include 'components/player_bar.html' %}
+  {% include 'components/queue_drawer.html' %}
+
+  <!-- Native Mobile Bottom Navigation Bar (Apple Music / Spotify Style) -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <button class="mobile-nav-item active" data-view="library" title="Home Library">
+      <i class="ph-fill ph-house"></i>
+      <span>Home</span>
+    </button>
+    <button class="mobile-nav-item" data-view="explore" title="Explore & Search">
+      <i class="ph-bold ph-compass"></i>
+      <span>Explore</span>
+    </button>
+    <button class="mobile-nav-item" data-view="playlists" title="Playlists">
+      <i class="ph-bold ph-playlist"></i>
+      <span>Playlists</span>
+    </button>
+    <button class="mobile-nav-item" data-view="artist-hub" title="Artists & Albums">
+      <i class="ph-bold ph-microphone-stage"></i>
+      <span>Artists</span>
+    </button>
+    <button class="mobile-nav-item" data-view="dj-studio" title="DJ Studio">
+      <i class="ph-bold ph-sliders"></i>
+      <span>Studio</span>
+    </button>
+  </nav>
+
+  <!-- Modals & Sheets -->
+  {% include 'modals/folders_modal.html' %}
+  {% include 'modals/download_modal.html' %}
+  {% include 'modals/video_modal.html' %}
+  {% include 'modals/eq_modal.html' %}
+  {% include 'modals/ambient_modal.html' %}
+  {% include 'modals/edit_track_modal.html' %}
+  {% include 'modals/playlist_create_modal.html' %}
+  {% include 'modals/yt_playlist_modal.html' %}
+  {% include 'modals/rewind_modal.html' %}
+  {% include 'modals/add_to_playlist_modal.html' %}
+  {% include 'modals/lyrics_search_modal.html' %}
+  {% include 'modals/theme_studio_modal.html' %}
+  {% include 'modals/fs_theme_studio_modal.html' %}
+  {% include 'modals/wallpaper_gallery_modal.html' %}
+  {% include 'modals/command_palette_modal.html' %}
+  {% include 'modals/auth_modal.html' %}
+  {% include 'modals/connect_modal.html' %}
+
+  {% include 'components/fullscreen_player.html' %}
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Floating Auto-DJ Beat-Matched Transition Indicator Pill -->
+  <div class="autodj-blending-pill" id="autodj-blending-pill">
+    <i class="ph-bold ph-disc dj-spin-icon"></i>
+    <span id="autodj-blending-text">Auto-DJ Blending • 120 → 124 BPM</span>
+  </div>
+
+  <audio id="audio"></audio>
+  <audio id="audio-deck-b"></audio>
+
+  <script src="/static/dj_engine.js?v=11.6"></script>
+  <script src="/static/dj_ui.js?v=11.6"></script>
+  <script src="/static/app.js?v=13.3"></script>
+  <script src="/static/connect.js?v=1.0"></script>
+  <script src="/static/waveform.js?v=1.1"></script>
+  <script src="/static/youtube.js?v=12.0"></script>
+  <script src="/static/audio_dsp.js?v=11.8"></script>
+  <script src="/static/keyboard.js?v=12.0"></script>
+  <script src="/static/command_palette.js?v=12.0"></script>
+  <script src="/static/visualizers.js?v=11.7"></script>
+  <script src="/static/fullscreen.js?v=11.6"></script>
+  <script src="/static/theme_studio.js?v=11.6"></script>
+  <script src="/static/recommendations.js?v=11.6"></script>
+  <script src="/static/discord_rpc.js?v=11.6"></script>
+  <script src="/static/smart_playlists.js?v=11.6"></script>
+  <script src="/static/tour.js?v=11.6"></script>
+  <script src="/static/lastfm.js?v=1.0"></script>
+  <script src="/static/artist_hub.js?v=1.0"></script>
+  <script src="/static/auth.js?v=1.0"></script>
+  <script src="/static/podcasts.js?v=1.0"></script>
+
+  <!-- PWA: Service Worker Registration & Cache Auto-Purge -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      // Purge any stale legacy caches
+      if ('caches' in window) {
+        caches.delete('linus-shell-v1').catch(() => {});
+      }
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => {
+            console.log('[Linus PWA] Service worker registered:', reg.scope);
+            reg.update();
+          })
+          .catch(err => console.warn('[Linus PWA] SW registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

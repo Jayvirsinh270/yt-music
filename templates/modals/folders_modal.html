@@ -1,0 +1,29 @@
+  <dialog id="folders-sheet">
+    <div class="dialog-header">
+      <div><p class="eyebrow">LIBRARY</p><h2>Manage Folders</h2></div>
+      <button class="round-action" id="folders-close"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="folders-list" id="folders-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+      <!-- Folders will be populated here -->
+    </div>
+    <div class="field-group">
+      <label>Add new folder (absolute path, e.g. D:\Music or C:\Users\username\Music)</label>
+      <div style="display:flex;gap:10px;">
+        <input type="text" id="new-folder-path" class="field-input" placeholder="e.g. D:\Music or C:\Users\username\Music">
+        <button class="btn-primary" id="add-folder-btn">Add</button>
+      </div>
+    </div>
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <h4 style="margin:0 0 4px 0;font-size:14px;color:var(--text, #fdf6ec);display:flex;align-items:center;gap:6px;">
+            <i class="ph-bold ph-broom"></i> Browser Cache & Storage
+          </h4>
+          <p style="margin:0;font-size:12px;color:var(--text-muted, rgba(255,255,255,0.5));">Your library, queue, settings and themes are saved directly in SQLite. Cleaning client cache releases browser memory and disk storage without losing anything.</p>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" id="clear-browser-cache-btn" style="white-space:nowrap;" onclick="window.clearLinusBrowserCache && window.clearLinusBrowserCache(true)">
+          <i class="ph-bold ph-trash"></i> Clean Browser Cache
+        </button>
+      </div>
+    </div>
+  </dialog>

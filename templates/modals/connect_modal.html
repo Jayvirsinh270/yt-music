@@ -1,0 +1,65 @@
+  <dialog id="connect-devices-sheet" class="modal-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow"><i class="ph-bold ph-broadcast"></i> CROSS-DEVICE PLAYBACK</p>
+        <h2 id="connect-modal-title">Linus Connect</h2>
+      </div>
+      <button type="button" class="round-action" id="connect-modal-close" title="Close"><i class="ph ph-x"></i></button>
+    </div>
+
+    <p class="muted" style="margin-bottom:14px;font-size:13px;">
+      Seamlessly control and transfer music between your phone, computer, and speakers on your network.
+    </p>
+
+    <!-- Current Device Indicator -->
+    <div id="connect-current-device-card" style="padding:14px;border-radius:14px;background:rgba(229,169,93,0.08);border:1px solid rgba(229,169,93,0.25);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:rgba(229,169,93,0.18);color:var(--accent);display:grid;place-items:center;font-size:20px;">
+          <i class="ph-fill ph-speaker-high" id="connect-current-icon"></i>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <strong style="font-size:14px;" id="connect-current-name">This Web Browser</strong>
+            <span class="norm-status-pill on" id="connect-current-status" style="font-size:10px;padding:2px 8px;">Active Player</span>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted);" id="connect-current-sub">Audio output is playing here</span>
+        </div>
+      </div>
+      <button type="button" class="btn-secondary" id="connect-rename-btn" style="padding:6px 12px;font-size:11px;" title="Rename this device">
+        <i class="ph ph-pencil-simple"></i> Rename
+      </button>
+    </div>
+
+    <!-- Available Devices Section -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+      <span>Available Devices</span>
+      <button type="button" id="connect-refresh-btn" class="round-action" style="width:24px;height:24px;font-size:12px;" title="Refresh device list">
+        <i class="ph ph-arrows-clockwise"></i>
+      </button>
+    </div>
+
+    <div id="connect-devices-list" style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;margin-bottom:16px;">
+      <div class="empty-state" style="padding:20px;text-align:center;">
+        <i class="ph ph-spinner-gap spinning" style="font-size:24px;margin-bottom:6px;"></i>
+        <p style="font-size:12px;margin:0;">Scanning for active Linus devices...</p>
+      </div>
+    </div>
+
+    <!-- Remote Playback Controls (Visible when remote controlling another device) -->
+    <div id="connect-remote-dock" style="display:none;padding:12px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:600;color:var(--accent);">REMOTE CONTROLLING</span>
+        <button type="button" class="btn-secondary" id="connect-takeover-btn" style="padding:4px 10px;font-size:11px;">Play Here Instead</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+        <button class="round-action" id="connect-remote-prev"><i class="ph-fill ph-skip-back"></i></button>
+        <button class="round-action" id="connect-remote-play" style="width:40px;height:40px;background:var(--accent);color:#111;"><i class="ph-fill ph-play"></i></button>
+        <button class="round-action" id="connect-remote-next"><i class="ph-fill ph-skip-forward"></i></button>
+      </div>
+    </div>
+
+    <div class="dialog-actions" style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:11.5px;color:var(--text-muted);"><i class="ph-fill ph-shield-check"></i> Local Network Encrypted</span>
+      <button type="button" class="btn-secondary" id="connect-modal-done">Done</button>
+    </div>
+  </dialog>

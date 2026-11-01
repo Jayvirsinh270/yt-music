@@ -1,0 +1,62 @@
+<!-- ============================================================
+     Universal Command Palette & Spotlight Search Modal
+     Triggered via Ctrl+K / Cmd+K or clicking the topbar search
+============================================================ -->
+<dialog id="command-palette-modal" class="cmd-palette-dialog" aria-modal="true" role="dialog" aria-label="Command Palette">
+  <div class="cmd-palette-card">
+    <!-- Top Search Input Bar -->
+    <div class="cmd-palette-search-bar">
+      <i class="ph-bold ph-magnifying-glass cmd-search-icon"></i>
+      <input 
+        type="text" 
+        id="cmd-palette-input" 
+        class="cmd-palette-input" 
+        placeholder="Type a command or search tracks... (e.g. 'Cozy', '8D', 'Lo-Fi', 'DJ', or song title)" 
+        autocomplete="off" 
+        spellcheck="false"
+      >
+      <button type="button" id="cmd-palette-clear" class="cmd-clear-btn hidden" title="Clear input" aria-label="Clear">
+        <i class="ph-bold ph-x"></i>
+      </button>
+      <kbd class="cmd-esc-badge" id="cmd-palette-esc-badge">Esc</kbd>
+    </div>
+
+    <!-- Filter Category Chips -->
+    <div class="cmd-palette-filter-bar" id="cmd-palette-filter-bar">
+      <button type="button" class="cmd-filter-chip active" data-filter="all">All</button>
+      <button type="button" class="cmd-filter-chip" data-filter="tracks"><i class="ph-bold ph-music-notes"></i> Tracks</button>
+      <button type="button" class="cmd-filter-chip" data-filter="actions"><i class="ph-bold ph-lightning"></i> Actions</button>
+      <button type="button" class="cmd-filter-chip" data-filter="views"><i class="ph-bold ph-compass"></i> Views</button>
+      <button type="button" class="cmd-filter-chip" data-filter="fx"><i class="ph-bold ph-sparkle"></i> Audio FX</button>
+      <button type="button" class="cmd-filter-chip" data-filter="modes"><i class="ph-bold ph-paint-brush"></i> Visualizers</button>
+    </div>
+
+    <!-- Dynamic Results Stage -->
+    <div class="cmd-palette-results" id="cmd-palette-results" role="listbox">
+      <!-- Populated dynamically via command_palette.js -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="cmd-palette-empty hidden" id="cmd-palette-empty">
+      <i class="ph-bold ph-sparkle cmd-empty-icon"></i>
+      <p class="cmd-empty-title">No matching commands or tracks</p>
+      <p class="cmd-empty-sub">Try searching for an artist, album, action (e.g. "8D", "Rewind", "DJ"), or explore YouTube.</p>
+      <button type="button" class="btn-primary cmd-yt-fallback-btn" id="cmd-yt-fallback-btn">
+        <i class="ph-bold ph-youtube-logo"></i> Search YouTube for "<span id="cmd-fallback-query"></span>"
+      </button>
+    </div>
+
+    <!-- Keyboard Shortcuts Hint Footer -->
+    <div class="cmd-palette-footer">
+      <div class="cmd-footer-hints">
+        <span class="cmd-hint-item"><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
+        <span class="cmd-hint-item"><kbd>↵</kbd> to select</span>
+        <span class="cmd-hint-item"><kbd>Shift</kbd> + <kbd>↵</kbd> to queue</span>
+        <span class="cmd-hint-item"><kbd>Esc</kbd> to close</span>
+      </div>
+      <div class="cmd-footer-badge">
+        <i class="ph-fill ph-command"></i> Linus Spotlight
+      </div>
+    </div>
+  </div>
+</dialog>

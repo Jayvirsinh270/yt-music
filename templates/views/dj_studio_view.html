@@ -1,0 +1,361 @@
+      <div id="dj-studio-view" class="view hidden">
+        <div class="dj-studio-container">
+          <!-- Top Bar -->
+          <div class="dj-top-bar">
+            <div class="dj-logo-group">
+              <i class="ph-fill ph-disc dj-logo-icon"></i>
+              <div class="dj-title">DJ Remix Studio</div>
+              <span class="dj-badge">Dual Deck Pro Console</span>
+            </div>
+            <div class="dj-top-controls">
+              <div class="dj-midi-pill" id="dj-midi-pill" title="MIDI Controller Status">
+                <span class="dj-midi-dot"></span>
+                <span>Web MIDI</span>
+              </div>
+              <button class="dj-rec-btn" id="dj-rec-btn" title="Record Live DJ Set to WAV/WebM">
+                <span class="rec-dot"></span>
+                <span class="rec-text">REC ●</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Console Grid: Deck A - Central Mixer - Deck B -->
+          <div class="dj-console-grid">
+            <!-- DECK A -->
+            <div class="dj-deck-card dj-deck-a">
+              <div class="deck-header">
+                <div class="deck-identity">
+                  <span class="deck-badge">DECK A</span>
+                  <div class="deck-track-meta">
+                    <div class="deck-track-title" id="track-title-a">No Track Loaded</div>
+                    <div class="deck-track-artist" id="track-artist-a">Click Load to select audio</div>
+                  </div>
+                </div>
+                <button class="deck-load-btn" id="btn-load-a"><i class="ph-bold ph-folder-open"></i> Load</button>
+              </div>
+
+              <!-- Scrolling Waveform -->
+              <div class="deck-waveform-wrapper">
+                <canvas class="deck-waveform-canvas" id="waveform-canvas-a"></canvas>
+                <div class="waveform-time-display">
+                  <span id="time-a">0:00 / 0:00</span>
+                  <span class="waveform-bpm-tag" id="bpm-val-a">124.0 BPM (0.0%)</span>
+                </div>
+              </div>
+
+              <!-- Jogwheel & Pitch Strip -->
+              <div class="deck-center-row">
+                <div class="jogwheel-box" id="jogwheel-a" title="Click & drag to scratch / scrub">
+                  <canvas class="jogwheel-canvas" id="jogwheel-canvas-a"></canvas>
+                </div>
+                <div class="deck-pitch-strip">
+                  <div class="pitch-label-row">
+                    <span>TEMPO</span>
+                    <span class="pitch-reset-btn" id="pitch-reset-a" title="Reset tempo to 100%">RESET</span>
+                  </div>
+                  <input type="range" class="pitch-slider-vertical" id="pitch-a" min="0" max="100" value="50">
+                  <div class="pitch-bend-group">
+                    <button class="pitch-nudge-btn" id="pitch-nudge-down-a" title="Pitch Nudge -">◀ BEND</button>
+                    <button class="pitch-nudge-btn" id="pitch-nudge-up-a" title="Pitch Nudge +">BEND ▶</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transport Controls -->
+              <div class="deck-transport-row">
+                <button class="transport-btn btn-play" id="play-a"><i class="ph-bold ph-play"></i> PLAY</button>
+                <button class="transport-btn btn-cue" id="cue-a"><i class="ph-bold ph-stop"></i> CUE</button>
+                <button class="transport-btn btn-sync" id="sync-a"><i class="ph-bold ph-arrows-merge"></i> SYNC</button>
+              </div>
+
+              <!-- Hot Cues & Loops -->
+              <div class="deck-pads-section">
+                <div class="pads-label-row">
+                  <span>HOT CUES (1-4)</span>
+                  <span style="font-size:10px;opacity:0.7;">Shift+Click Clear</span>
+                </div>
+                <div class="hot-cues-grid">
+                  <button class="cue-pad-btn" id="cue-a-1"><span>1</span><span class="cue-pad-time">EMPTY</span></button>
+                  <button class="cue-pad-btn" id="cue-a-2"><span>2</span><span class="cue-pad-time">EMPTY</span></button>
+                  <button class="cue-pad-btn" id="cue-a-3"><span>3</span><span class="cue-pad-time">EMPTY</span></button>
+                  <button class="cue-pad-btn" id="cue-a-4"><span>4</span><span class="cue-pad-time">EMPTY</span></button>
+                </div>
+                <div class="pads-label-row" style="margin-top:4px;">
+                  <span>AUTO LOOP</span>
+                </div>
+                <div class="loop-grid">
+                  <button class="loop-btn loop-btn-a" data-beats="0.5">1/2</button>
+                  <button class="loop-btn loop-btn-a" data-beats="1">1</button>
+                  <button class="loop-btn loop-btn-a" data-beats="2">2</button>
+                  <button class="loop-btn loop-btn-a" data-beats="4">4</button>
+                  <button class="loop-btn loop-btn-a" data-beats="0">EXIT</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- CENTRAL 2-CHANNEL MIXER -->
+            <div class="dj-mixer-card">
+              <div class="mixer-header-row">
+                <span class="mixer-label">PRO MIXER</span>
+                <div class="mixer-master-knob-box">
+                  <span class="dj-knob-label">MASTER</span>
+                  <input type="range" id="master-vol-knob" min="0" max="1.5" step="0.05" value="1.0" style="width:70px;cursor:pointer;">
+                </div>
+              </div>
+
+              <div class="mixer-channels-grid">
+                <!-- Channel A Strip -->
+                <div class="mixer-channel-strip">
+                  <span class="ch-badge" style="color:#00e5ff;">CH 1 (A)</span>
+                  <!-- Trim -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial" id="knob-trim-a"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">TRIM</span>
+                  </div>
+                  <!-- High -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial" id="knob-hi-a"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">HI</span>
+                    <button class="eq-kill-btn" id="kill-high-a">KILL</button>
+                  </div>
+                  <!-- Mid -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial" id="knob-mid-a"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">MID</span>
+                    <button class="eq-kill-btn" id="kill-mid-a">KILL</button>
+                  </div>
+                  <!-- Low -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial" id="knob-low-a"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">LOW</span>
+                    <button class="eq-kill-btn" id="kill-low-a">KILL</button>
+                  </div>
+                  <!-- Filter -->
+                  <div class="dj-knob-container dj-filter-knob">
+                    <div class="dj-knob-dial" id="knob-filter-a"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">FILTER</span>
+                  </div>
+                  <!-- Upfader & VU Meter -->
+                  <div class="fader-vu-group">
+                    <input type="range" orient="vertical" class="channel-upfader-vertical" id="upfader-a" min="0" max="1" step="0.02" value="1">
+                    <div class="vu-meter-ladder" id="vu-meter-a">
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Channel B Strip -->
+                <div class="mixer-channel-strip">
+                  <span class="ch-badge" style="color:#ff007f;">CH 2 (B)</span>
+                  <!-- Trim -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial dj-deck-b-knob" id="knob-trim-b"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">TRIM</span>
+                  </div>
+                  <!-- High -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial dj-deck-b-knob" id="knob-hi-b"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">HI</span>
+                    <button class="eq-kill-btn" id="kill-high-b">KILL</button>
+                  </div>
+                  <!-- Mid -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial dj-deck-b-knob" id="knob-mid-b"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">MID</span>
+                    <button class="eq-kill-btn" id="kill-mid-b">KILL</button>
+                  </div>
+                  <!-- Low -->
+                  <div class="dj-knob-container">
+                    <div class="dj-knob-dial dj-deck-b-knob" id="knob-low-b"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">LOW</span>
+                    <button class="eq-kill-btn" id="kill-low-b">KILL</button>
+                  </div>
+                  <!-- Filter -->
+                  <div class="dj-knob-container dj-filter-knob">
+                    <div class="dj-knob-dial dj-deck-b-knob" id="knob-filter-b"><div class="dj-knob-pointer"></div></div>
+                    <span class="dj-knob-label">FILTER</span>
+                  </div>
+                  <!-- Upfader & VU Meter -->
+                  <div class="fader-vu-group">
+                    <input type="range" orient="vertical" class="channel-upfader-vertical" id="upfader-b" min="0" max="1" step="0.02" value="1">
+                    <div class="vu-meter-ladder" id="vu-meter-b">
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                      <div class="vu-segment"></div><div class="vu-segment"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Crossfader Strip -->
+              <div class="crossfader-section">
+                <div class="crossfader-top-row">
+                  <span class="crossfader-label">CROSSFADER</span>
+                  <select class="crossfader-curve-select" id="crossfader-curve-select">
+                    <option value="smooth">Smooth (Equal Power)</option>
+                    <option value="linear">Linear</option>
+                    <option value="scratch">Scratch Cut (Turntable)</option>
+                  </select>
+                </div>
+                <input type="range" class="crossfader-slider" id="dj-crossfader" min="-1" max="1" step="0.02" value="0">
+                <div class="crossfader-labels-row">
+                  <span class="cf-label-a">DECK A</span>
+                  <span style="color:#64748b;font-size:10px;">CENTER (X)</span>
+                  <span class="cf-label-b">DECK B</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DECK B -->
+            <div class="dj-deck-card dj-deck-b">
+              <div class="deck-header">
+                <div class="deck-identity">
+                  <span class="deck-badge">DECK B</span>
+                  <div class="deck-track-meta">
+                    <div class="deck-track-title" id="track-title-b">No Track Loaded</div>
+                    <div class="deck-track-artist" id="track-artist-b">Click Load to select audio</div>
+                  </div>
+                </div>
+                <button class="deck-load-btn" id="btn-load-b"><i class="ph-bold ph-folder-open"></i> Load</button>
+              </div>
+
+              <!-- Scrolling Waveform -->
+              <div class="deck-waveform-wrapper">
+                <canvas class="deck-waveform-canvas" id="waveform-canvas-b"></canvas>
+                <div class="waveform-time-display">
+                  <span id="time-b">0:00 / 0:00</span>
+                  <span class="waveform-bpm-tag" id="bpm-val-b" style="color:#f472b6;background:rgba(244,114,182,0.12);">124.0 BPM (0.0%)</span>
+                </div>
+              </div>
+
+              <!-- Jogwheel & Pitch Strip -->
+              <div class="deck-center-row">
+                <div class="jogwheel-box" id="jogwheel-b" title="Click & drag to scratch / scrub">
+                  <canvas class="jogwheel-canvas" id="jogwheel-canvas-b"></canvas>
+                </div>
+                <div class="deck-pitch-strip">
+                  <div class="pitch-label-row">
+                    <span>TEMPO</span>
+                    <span class="pitch-reset-btn" id="pitch-reset-b" title="Reset tempo to 100%">RESET</span>
+                  </div>
+                  <input type="range" class="pitch-slider-vertical" id="pitch-b" min="0" max="100" value="50">
+                  <div class="pitch-bend-group">
+                    <button class="pitch-nudge-btn" id="pitch-nudge-down-b" title="Pitch Nudge -">◀ BEND</button>
+                    <button class="pitch-nudge-btn" id="pitch-nudge-up-b" title="Pitch Nudge +">BEND ▶</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transport Controls -->
+              <div class="deck-transport-row">
+                <button class="transport-btn btn-play" id="play-b"><i class="ph-bold ph-play"></i> PLAY</button>
+                <button class="transport-btn btn-cue" id="cue-b"><i class="ph-bold ph-stop"></i> CUE</button>
+                <button class="transport-btn btn-sync" id="sync-b"><i class="ph-bold ph-arrows-merge"></i> SYNC</button>
+              </div>
+
+              <!-- Hot Cues & Loops -->
+              <div class="deck-pads-section">
+                <div class="pads-label-row">
+                  <span>HOT CUES (1-4)</span>
+                  <span style="font-size:10px;opacity:0.7;">Shift+Click Clear</span>
+                </div>
+                <div class="hot-cues-grid">
+                  <button class="cue-pad-btn" id="cue-b-1"><span>1</span><span class="cue-pad-time">EMPTY</span></button>
+                  <button class="cue-pad-btn" id="cue-b-2"><span>2</span><span class="cue-pad-time">EMPTY</span></button>
+                  <button class="cue-pad-btn" id="cue-b-3"><span>3</span><span class="cue-pad-time">EMPTY</span></button>
+                  <button class="cue-pad-btn" id="cue-b-4"><span>4</span><span class="cue-pad-time">EMPTY</span></button>
+                </div>
+                <div class="pads-label-row" style="margin-top:4px;">
+                  <span>AUTO LOOP</span>
+                </div>
+                <div class="loop-grid">
+                  <button class="loop-btn loop-btn-b" data-beats="0.5">1/2</button>
+                  <button class="loop-btn loop-btn-b" data-beats="1">1</button>
+                  <button class="loop-btn loop-btn-b" data-beats="2">2</button>
+                  <button class="loop-btn loop-btn-b" data-beats="4">4</button>
+                  <button class="loop-btn loop-btn-b" data-beats="0">EXIT</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Performance Strip: Master FX Rack & Sampler Pads -->
+          <div class="dj-bottom-strip">
+            <!-- Master FX Rack -->
+            <div class="dj-card-panel">
+              <div class="panel-title-row">
+                <span class="panel-title"><i class="ph-fill ph-waveform"></i> Master DSP Effects</span>
+              </div>
+              <div class="fx-buttons-row">
+                <button class="fx-select-btn" data-fx="echo">ECHO / DELAY</button>
+                <button class="fx-select-btn" data-fx="reverb">SPACE REVERB</button>
+                <button class="fx-select-btn" data-fx="flanger">JET FLANGER</button>
+              </div>
+              <div class="fx-parameters-row">
+                <div class="fx-beats-group">
+                  <button class="fx-beat-btn" data-fraction="0.25">1/4 Beat</button>
+                  <button class="fx-beat-btn active" data-fraction="0.5">1/2 Beat</button>
+                  <button class="fx-beat-btn" data-fraction="1">1 Beat</button>
+                </div>
+                <div class="fx-wetdry-group">
+                  <span>WET / DRY</span>
+                  <input type="range" class="fx-wetdry-slider" id="fx-wetdry" min="0" max="1" step="0.05" value="0.35">
+                </div>
+              </div>
+            </div>
+
+            <!-- Sampler Soundboard -->
+            <div class="dj-card-panel">
+              <div class="panel-title-row">
+                <span class="panel-title"><i class="ph-fill ph-speaker-simple-high"></i> Performance Drops (Keys 1-6)</span>
+              </div>
+              <div class="sampler-pads-grid">
+                <button class="sample-pad-btn" data-sample="airhorn">
+                  <span class="sample-pad-icon">📢</span>
+                  <span>Airhorn</span>
+                </button>
+                <button class="sample-pad-btn" data-sample="laser">
+                  <span class="sample-pad-icon">🔫</span>
+                  <span>Laser</span>
+                </button>
+                <button class="sample-pad-btn" data-sample="siren">
+                  <span class="sample-pad-icon">🚨</span>
+                  <span>Dub Siren</span>
+                </button>
+                <button class="sample-pad-btn" data-sample="drop">
+                  <span class="sample-pad-icon">💥</span>
+                  <span>Sub Drop</span>
+                </button>
+                <button class="sample-pad-btn" data-sample="clap">
+                  <span class="sample-pad-icon">👏</span>
+                  <span>808 Clap</span>
+                </button>
+                <button class="sample-pad-btn" data-sample="scratch">
+                  <span class="sample-pad-icon">💿</span>
+                  <span>Scratch</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Track Picker Modal -->
+        <div class="dj-modal-backdrop hidden" id="dj-track-modal">
+          <div class="dj-modal-card">
+            <div class="dj-modal-header">
+              <div class="dj-modal-title">Load Audio to <span id="dj-modal-deck-badge" style="color:#38bdf8;">Deck</span></div>
+              <button class="dj-modal-close-btn" id="dj-modal-close"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="dj-modal-search">
+              <input type="search" id="dj-modal-search-input" placeholder="Search track by title, artist, or album...">
+            </div>
+            <div class="dj-modal-list" id="dj-modal-list"></div>
+          </div>
+        </div>
+      </div>

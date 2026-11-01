@@ -1,0 +1,21 @@
+  <!-- Video Player Modal -->
+  <div class="video-modal hidden" id="video-modal">
+    <div class="video-backdrop" id="video-modal-backdrop"></div>
+    <div class="video-content">
+      <div class="video-top">
+        <div>
+          <h3 id="video-modal-title">Title</h3>
+          <span id="video-modal-artist">Artist</span>
+        </div>
+        <button class="round-action" id="video-modal-close"><i class="ph ph-x"></i></button>
+      </div>
+      <video id="video-player" controls></video>
+      <iframe id="youtube-video-player" class="hidden" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      <div class="video-bottom">
+        <button class="btn-primary" id="video-modal-stream-audio" style="gap: 6px;"><i class="ph-fill ph-music-notes"></i> Stream Audio</button>
+        <a id="video-modal-yt-link" class="btn-secondary" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;"><i class="ph ph-arrow-square-out"></i> Watch on YouTube</a>
+        <button class="btn-secondary" id="video-modal-lyrics"><i class="ph ph-quotes"></i></button>
+        <button class="btn-secondary" id="video-modal-favorite"><i class="ph ph-star"></i></button>
+      </div>
+    </div>
+  </div>

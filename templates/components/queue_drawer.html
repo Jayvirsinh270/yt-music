@@ -1,0 +1,19 @@
+  <div class="queue-drawer" id="queue-drawer">
+    <div class="queue-header">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <h2 style="font-size:20px;margin:0;">Play Queue</h2>
+        <span id="queue-stats" style="font-size:12px;color:var(--text-muted);font-weight:400;display:none;"></span>
+      </div>
+      <button class="round-action" id="queue-close" title="Close Queue"><i class="ph ph-x"></i></button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+      <button class="btn-secondary" id="queue-shuffle-btn" style="flex:1;min-width:65px;padding:6px 8px;font-size:12px;" title="Smart Shuffle"><i class="ph ph-shuffle"></i> Shuffle</button>
+      <button class="btn-secondary" id="queue-vibe-compass-btn" style="flex:1;min-width:60px;padding:6px 8px;font-size:12px;" title="Open 2D Vibe Compass"><i class="ph-bold ph-compass"></i> Vibe</button>
+      <button class="btn-secondary" id="queue-save-playlist-btn" style="flex:1.2;min-width:78px;padding:6px 8px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:4px;" title="Save current queue as a playlist"><i class="ph-bold ph-bookmark-simple"></i> Save Queue</button>
+      <button class="btn-secondary" id="queue-clear-btn" style="flex:1;min-width:60px;padding:6px 8px;font-size:12px;" title="Clear upcoming queue"><i class="ph ph-trash"></i> Clear</button>
+    </div>
+    <div class="queue-list" id="queue-list"></div>
+    <button id="queue-open-inline" class="hidden"></button>
+    <!-- Used by JS for random layout rendering -->
+    <div id="album-ribbon" class="hidden"></div> 
+  </div>

@@ -1,0 +1,90 @@
+  <dialog id="weekly-rewind-modal" class="modal-sheet weekly-rewind-modal" style="max-width: 620px; width: 94vw;">
+    <div class="dialog-header">
+      <div>
+        <span class="eyebrow" style="color:var(--accent);display:flex;align-items:center;gap:6px;">
+          <i class="ph-bold ph-calendar-star"></i> SOUND REWIND
+        </span>
+        <h2 id="rewind-modal-timeframe">Weekly Sound Rewind</h2>
+      </div>
+      <button class="icon-button" id="rewind-modal-close" aria-label="Close Rewind"><i class="ph ph-x"></i></button>
+    </div>
+
+    <div class="rewind-modal-body" id="rewind-modal-content">
+      <!-- Loading State -->
+      <div id="rewind-loading-spinner" class="rewind-loading-state">
+        <div class="spinner"></div>
+        <p style="margin-top:12px;color:var(--text-muted);font-size:13px;">Synthesizing your weekly listening identity...</p>
+      </div>
+
+      <!-- Loaded Rewind Content Container (hidden initially) -->
+      <div id="rewind-loaded-container" class="hidden">
+        <!-- 1. Musical Persona Showcase Card -->
+        <div class="rewind-persona-card" id="rewind-persona-card">
+          <div class="rewind-persona-glow" id="rewind-persona-glow"></div>
+          <div class="rewind-persona-header">
+            <span class="rewind-persona-badge-pill" id="rewind-persona-pill">
+              <i class="ph-fill ph-fingerprint"></i> YOUR MUSICAL PERSONA
+            </span>
+          </div>
+          <div class="rewind-persona-main">
+            <span class="rewind-persona-emoji" id="rewind-persona-emoji">🦉</span>
+            <div class="rewind-persona-titles">
+              <h3 class="rewind-persona-title" id="rewind-persona-title">The Night Owl Explorer</h3>
+              <p class="rewind-persona-motto" id="rewind-persona-motto">Crafting nocturnal soundtracks when the world is fast asleep.</p>
+            </div>
+          </div>
+          <div class="rewind-persona-traits" id="rewind-persona-traits">
+            <!-- Dynamic trait tags -->
+          </div>
+        </div>
+
+        <!-- 2. Sound Metrics Tiles (4-grid) -->
+        <div class="rewind-stats-grid">
+          <div class="rewind-stat-tile">
+            <i class="ph-bold ph-clock-countdown rewind-stat-icon"></i>
+            <span class="rewind-stat-value" id="rewind-stat-time">--</span>
+            <span class="rewind-stat-label">Listening Time</span>
+          </div>
+          <div class="rewind-stat-tile">
+            <i class="ph-bold ph-music-notes rewind-stat-icon"></i>
+            <span class="rewind-stat-value" id="rewind-stat-plays">--</span>
+            <span class="rewind-stat-label">Tracks Completed</span>
+          </div>
+          <div class="rewind-stat-tile">
+            <i class="ph-bold ph-calendar-check rewind-stat-icon"></i>
+            <span class="rewind-stat-value" id="rewind-stat-days">--</span>
+            <span class="rewind-stat-label">Active Days</span>
+          </div>
+          <div class="rewind-stat-tile">
+            <i class="ph-bold ph-sparkle rewind-stat-icon"></i>
+            <span class="rewind-stat-value" id="rewind-stat-peak">--</span>
+            <span class="rewind-stat-label">Peak Listening</span>
+          </div>
+        </div>
+
+        <!-- 3. Top 5 Tracks of the Week -->
+        <div class="rewind-tracks-section">
+          <div class="rewind-section-head">
+            <h4><i class="ph-bold ph-trophy" style="color:#f5c87a;margin-right:6px;"></i> Top Tracks This Week</h4>
+            <span class="rewind-section-sub" id="rewind-genre-sub">Top Genre: Pop</span>
+          </div>
+          <div class="rewind-tracks-list" id="rewind-tracks-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- 4. Modal Actions -->
+        <div class="rewind-actions-footer">
+          <button class="btn-primary" id="rewind-play-mix-btn">
+            <i class="ph-fill ph-play"></i> Play Weekly Mix
+          </button>
+          <button class="btn-secondary" id="rewind-export-card-btn" title="Export high-resolution visual story card (PNG)">
+            <i class="ph-bold ph-image"></i> Export Card
+          </button>
+          <button class="btn-secondary" id="rewind-copy-summary-btn" title="Copy listening recap to clipboard">
+            <i class="ph-bold ph-share-network"></i> Share Summary
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>

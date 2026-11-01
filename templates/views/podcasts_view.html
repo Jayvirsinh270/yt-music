@@ -1,0 +1,98 @@
+<div id="podcasts-view" class="view hidden">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">AUDIO SHOWS & EPISODES</p>
+      <h2>Podcasts & RSS Feeds</h2>
+      <p class="muted">Subscribe to any public podcast RSS feed, stream episodes, and auto-resume</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-primary" id="podcast-subscribe-modal-btn">
+        <i class="ph-bold ph-plus"></i> Subscribe RSS
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Starter Suggestions -->
+  <div class="podcast-featured-banner mb-6">
+    <div class="podcast-featured-header">
+      <span class="eyebrow" style="color:var(--accent);"><i class="ph-fill ph-sparkle"></i> POPULAR PODCAST FEEDS</span>
+      <p class="text-sm muted">Click any feed to instantly subscribe and load episodes</p>
+    </div>
+    <div class="podcast-quick-feeds">
+      <button class="podcast-quick-pill" data-feed="https://feeds.npr.org/500005/podcast.xml">
+        <i class="ph-fill ph-radio"></i> NPR News Now
+      </button>
+      <button class="podcast-quick-pill" data-feed="https://podcasts.files.bbci.co.uk/p02nq0gn.rss">
+        <i class="ph-fill ph-globe"></i> BBC Global News
+      </button>
+      <button class="podcast-quick-pill" data-feed="https://feeds.megaphone.fm/hubermanlab">
+        <i class="ph-fill ph-brain"></i> Huberman Lab
+      </button>
+      <button class="podcast-quick-pill" data-feed="https://lexfridman.com/feed/podcast/">
+        <i class="ph-fill ph-microphone"></i> Lex Fridman Podcast
+      </button>
+    </div>
+  </div>
+
+  <!-- Subscribed Shows Section -->
+  <div id="podcast-shows-container">
+    <h3 class="section-title mb-4"><i class="ph-fill ph-broadcast"></i> Subscribed Shows</h3>
+    <div id="podcasts-grid" class="podcasts-grid">
+      <div class="muted py-8 text-center" style="grid-column: 1/-1;">
+        No podcast subscriptions yet. Click <strong>Subscribe RSS</strong> or pick one of the featured shows above!
+      </div>
+    </div>
+  </div>
+
+  <!-- Podcast Detail Panel (Populated on click) -->
+  <div id="podcast-detail-panel" class="podcast-detail-panel hidden">
+    <button class="soft-button mb-4" id="podcast-detail-back-btn">
+      <i class="ph-bold ph-arrow-left"></i> Back to Subscriptions
+    </button>
+    <div class="podcast-hero-card">
+      <div class="podcast-hero-cover-wrap">
+        <img id="podcast-hero-cover" class="podcast-hero-cover" src="" alt="Podcast Cover">
+        <div class="podcast-hero-cover-placeholder hidden" id="podcast-hero-placeholder"><i class="ph-fill ph-broadcast"></i></div>
+      </div>
+      <div class="podcast-hero-info">
+        <span class="eyebrow">PODCAST SHOW</span>
+        <h1 id="podcast-hero-title" class="podcast-hero-title">Podcast Title</h1>
+        <p class="muted" id="podcast-hero-author">by Host Name</p>
+        <p class="podcast-hero-desc text-sm muted" id="podcast-hero-desc"></p>
+        <div class="podcast-hero-actions">
+          <button class="soft-button" id="podcast-unsubscribe-btn" style="color:#ef4444;">
+            <i class="ph ph-trash"></i> Unsubscribe
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="podcast-episodes-section mt-6">
+      <h3 class="section-title"><i class="ph-fill ph-playlist"></i> Episodes</h3>
+      <div id="podcast-episodes-list" class="podcast-episodes-list"></div>
+    </div>
+  </div>
+
+  <!-- Subscribe Modal -->
+  <dialog id="podcast-subscribe-dialog" class="podcast-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">ADD FEED</p>
+        <h2>Subscribe to Podcast RSS</h2>
+      </div>
+      <button class="round-action" id="podcast-dialog-close"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="podcast-dialog-body" style="padding: 14px 0 20px 0;">
+      <p class="muted text-sm mb-4">Paste any podcast RSS XML feed URL (e.g. from Apple Podcasts, Substack, Megaphone, or RSS.com):</p>
+      <div class="field-group mb-4">
+        <input type="url" id="podcast-rss-input" class="field-input" placeholder="https://example.com/podcast.rss">
+      </div>
+      <div id="podcast-dialog-status" class="text-sm mb-3"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn-primary" id="podcast-confirm-subscribe-btn">
+          <i class="ph-bold ph-check"></i> Add Show
+        </button>
+      </div>
+    </div>
+  </dialog>
+</div>

@@ -1,0 +1,54 @@
+      <div id="lyrics-view" class="view hidden">
+        <div class="lyrics-page" id="lyrics-page">
+          <div class="lyrics-header-row">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <p class="eyebrow" style="margin:0;">POETRY & KARAOKE</p>
+                <span id="lyrics-source-badge" class="lyrics-source-badge hidden">LRCLIB (Synced)</span>
+              </div>
+              <h3 id="lyrics-title">Nothing playing</h3>
+              <p class="muted" id="lyrics-artist">-</p>
+            </div>
+            <div class="lyrics-mode-toggles">
+              <button class="type-btn active" id="lyrics-tab-karaoke"><i class="ph ph-microphone-stage"></i> Live Karaoke</button>
+              <button class="type-btn" id="open-lyrics-search-btn"><i class="ph ph-magnifying-glass"></i> Search Lyrics</button>
+              <button class="type-btn" id="lyrics-tab-editor"><i class="ph ph-pencil-simple"></i> Edit</button>
+            </div>
+          </div>
+
+          <!-- Plain Lyrics Auto-Sync Callout Banner -->
+          <div id="lyrics-plain-sync-banner" class="lyrics-plain-sync-banner hidden">
+            <div class="lyrics-plain-banner-info">
+              <div class="lyrics-plain-banner-icon"><i class="ph-fill ph-lightning"></i></div>
+              <div>
+                <strong>Plain lyrics loaded (no timestamps).</strong>
+                <p>Align official words directly to the song's audio timestamps with 100% precision.</p>
+              </div>
+            </div>
+            <button class="btn-primary auto-sync-lyrics-btn" id="karaoke-auto-sync-btn">
+              <i class="ph-fill ph-lightning"></i> ⚡ Auto-Sync Lyrics to Audio
+            </button>
+          </div>
+          
+          <div class="karaoke-live-stage" id="karaoke-live-stage">
+            <div class="karaoke-lines-container" id="karaoke-lines-container">
+              <p class="karaoke-empty">Play a song to stream live synchronized lyrics.</p>
+            </div>
+            <!-- Apple Music Style Floating Snap Pill -->
+            <button class="lyrics-snap-pill hidden" id="lyrics-snap-pill-main" title="Return to current playing lyric">
+              <i class="ph-fill ph-arrow-down-left"></i>
+              <span>Snap to Current Lyric</span>
+            </button>
+          </div>
+          
+          <div class="lyrics-editor-wrap hidden" id="lyrics-editor-wrap">
+            <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+              <button class="btn-secondary" id="fetch-lyrics-btn"><i class="ph ph-arrows-clockwise"></i> Auto-fetch</button>
+              <button class="btn-secondary" id="search-lyrics-btn-edit"><i class="ph ph-magnifying-glass"></i> Search online</button>
+              <button class="btn-secondary auto-sync-lyrics-btn" id="editor-auto-sync-btn" title="Align plain lyrics to audio with AI forced alignment"><i class="ph-fill ph-lightning"></i> ⚡ Auto-Sync Lyrics to Audio</button>
+              <button class="btn-primary" id="save-lyrics"><i class="ph ph-floppy-disk"></i> Save lyrics</button>
+            </div>
+            <textarea class="lyrics-editor" id="lyrics-editor" placeholder="Lyrics will appear here..."></textarea>
+          </div>
+        </div>
+      </div>

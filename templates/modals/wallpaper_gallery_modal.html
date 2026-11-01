@@ -1,0 +1,30 @@
+  <dialog id="wallpaper-gallery-sheet" class="modal-sheet wallpaper-gallery-modal">
+    <div class="studio-modal-container" style="max-width:960px;">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow" style="margin:0;">50+ 4K ARTWORKS & AESTHETICS</p>
+          <h2 style="font-size:24px;margin:4px 0 0;">Wallpaper Gallery Explorer</h2>
+        </div>
+        <button type="button" class="round-action" id="wallpaper-gallery-close"><i class="ph ph-x"></i></button>
+      </div>
+
+      <!-- Category Filter Chips -->
+      <div class="wallpaper-category-chips" id="gallery-category-chips">
+        <button class="cat-chip-btn active" data-cat="all"><i class="ph-fill ph-sparkle"></i> All 50+ Wallpapers</button>
+        <button class="cat-chip-btn" data-cat="anime"><i class="ph-fill ph-game-controller"></i> Anime & Cyberpunk</button>
+        <button class="cat-chip-btn" data-cat="nature"><i class="ph-fill ph-tree"></i> Nature & Scenic</button>
+        <button class="cat-chip-btn" data-cat="space"><i class="ph-fill ph-planet"></i> Space & Sci-Fi</button>
+        <button class="cat-chip-btn" data-cat="minimal"><i class="ph-fill ph-paint-brush"></i> Minimalist & Abstract</button>
+        <button class="cat-chip-btn" data-cat="cozy"><i class="ph-fill ph-coffee"></i> Cozy & Aesthetic</button>
+      </div>
+
+      <!-- Dynamic Gallery Grid with 50+ Artworks -->
+      <div class="gallery-grid" id="full-gallery-grid">
+        <!-- Dynamically populated by renderFullWallpaperGallery() -->
+      </div>
+
+      <div class="dialog-actions" style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);text-align:right;">
+        <button type="button" class="btn-primary" id="wallpaper-gallery-done-btn"><i class="ph-fill ph-check-circle"></i> Close Gallery</button>
+      </div>
+    </div>
+  </dialog>

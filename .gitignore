@@ -1,0 +1,107 @@
+# =============================================================================
+# LINUS MUSIC PLAYER — GITIGNORE
+# Ensures all personal data, databases, secrets, and caches are NEVER committed.
+# =============================================================================
+
+# ─── Databases & Personal Listening Data ─────────────────────────────────────
+*.db
+*.db-*
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
+linus.db
+linus.db-*
+linus_state.json
+
+# ─── Media, Cache, and User Downloads ────────────────────────────────────────
+downloads/
+lyrics_cache/
+stream_cache/
+media/
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+*.mp4
+*.mkv
+*.webm
+
+# ─── Environment & Secrets ───────────────────────────────────────────────────
+.env
+.env.*
+.env.local
+!.env.example
+*.pem
+*.key
+*.token
+token.json
+tokens/
+credentials.json
+client_secret*.json
+
+# ─── YouTube Authentication & Cookies ────────────────────────────────────────
+*cookies*.txt
+cookies.txt
+youtube_cookies.txt
+*.cookie
+*.cookies
+
+# ─── Python Environment & Caches ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+*.egg
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.log
+
+# ─── Mobile, Flutter & Android Build Artifacts ────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+mobile/build/
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/key.properties
+**/android/*.jks
+**/android/*.keystore
+local.properties
+key.properties
+*.jks
+*.keystore
+google-services.json
+
+# ─── IDE, OS & Workspace Caches ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+.impeccable/

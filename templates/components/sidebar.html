@@ -1,0 +1,45 @@
+    <!-- Floating Edge Trigger Handle (Touch/Click to summon Sidebar) -->
+    <button class="sidebar-edge-trigger" id="sidebar-edge-trigger" title="Open Navigation Menu (Touch or Click)" aria-label="Open Navigation Menu">
+      <div class="edge-trigger-pill">
+        <i class="ph-bold ph-caret-right edge-trigger-icon"></i>
+        <span class="edge-trigger-text">Menu</span>
+      </div>
+      <div class="edge-trigger-glow"></div>
+    </button>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a class="brand" href="#library"><i class="ph-fill ph-vinyl-record"></i> Linus.</a>
+        <div class="sidebar-header-actions">
+          <button class="round-action sidebar-pin-btn" id="sidebar-pin-btn" title="Pin sidebar visible"><i class="ph ph-push-pin"></i></button>
+          <button class="round-action sidebar-close-btn" id="sidebar-close-btn" title="Close Menu"><i class="ph ph-x"></i></button>
+        </div>
+        <p class="tagline">Your serene audio space</p>
+      </div>
+      
+      <nav class="nav">
+        <button class="nav-item active" data-view="library"><i class="ph ph-music-notes-simple"></i> Library</button>
+        <button class="nav-item" data-view="explore"><i class="ph ph-compass"></i> Explore</button>
+        <button class="nav-item" data-view="artist-hub"><i class="ph ph-microphone-stage"></i> Artists & Albums</button>
+        <button class="nav-item" data-view="videos"><i class="ph ph-film-strip"></i> Videos</button>
+        <button class="nav-item" data-view="playlists"><i class="ph ph-list-dashes"></i> Playlists</button>
+        <button class="nav-item" data-view="favorites"><i class="ph ph-star"></i> Favorites</button>
+        <button class="nav-item" data-view="lyrics"><i class="ph ph-quotes"></i> Lyrics</button>
+        <button class="nav-item" data-view="downloads"><i class="ph ph-download-simple"></i> Downloads</button>
+        <button class="nav-item" data-view="podcasts"><i class="ph ph-broadcast"></i> Podcasts</button>
+        <button class="nav-item" data-view="dj-studio" style="color:#38bdf8;"><i class="ph-bold ph-sliders"></i> DJ Studio</button>
+      </nav>
+      
+      <div class="sidebar-bottom">
+        <button class="soft-button" id="sidebar-tour-btn" style="color:var(--accent);"><i class="ph-fill ph-sparkle"></i> Feature Tour</button>
+        <button class="soft-button" id="sidebar-studio-btn"><i class="ph-fill ph-paint-brush-broad"></i> Studio Customizer</button>
+        <button class="soft-button" id="sidebar-security-btn"><i class="ph ph-lock-key"></i> Security PIN</button>
+        <button class="soft-button" id="manage-folders"><i class="ph ph-folder-open"></i> Manage Folders</button>
+        <button class="soft-button" id="download-button"><i class="ph ph-link"></i> Download media</button>
+        <div class="status-box">
+          <p class="edition">v2.0 Aesthetic</p>
+          <p class="database-status" id="database-status">Metadata: Checking...</p>
+        </div>
+      </div>
+    </aside>

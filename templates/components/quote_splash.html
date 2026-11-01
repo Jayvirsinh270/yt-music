@@ -1,0 +1,71 @@
+  <!-- Immediate Quote Dismiss Handler (Zero-latency fallback) -->
+  <script>
+    if (!window.dismissQuoteSplash) {
+      window.dismissQuoteSplash = function() {
+        var el = document.getElementById('quote-splash-overlay');
+        if (el) {
+          window.quoteSplashIsDismissed = true;
+          window.quoteSplashDismissedAt = Date.now();
+          if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
+          el.classList.add('dissolve');
+          el.style.pointerEvents = 'none';
+          try {
+            localStorage.setItem('linus_last_quote_date', new Date().toISOString().slice(0, 10));
+          } catch (e) {}
+          setTimeout(function() {
+            el.classList.add('hidden');
+            el.style.display = 'none';
+          }, 320);
+        }
+      };
+    }
+  </script>
+
+  <!-- Welcome Quote Splash Screen Overlay -->
+  <div id="quote-splash-overlay" class="quote-splash-overlay" aria-modal="true" role="dialog" aria-label="Daily Inspiration" onclick="if(event.target===this||event.target.classList.contains('quote-splash-backdrop')||event.target.classList.contains('quote-splash-glow')||event.target.classList.contains('quote-splash-ambient-aura')){if(window.dismissQuoteSplash)window.dismissQuoteSplash();}">
+    <div class="quote-splash-backdrop"></div>
+    <div class="quote-splash-glow"></div>
+    <div class="quote-splash-ambient-aura"></div>
+    
+    <div class="quote-splash-card">
+      <div class="quote-splash-top-row">
+        <div class="quote-splash-badge">
+          <i class="ph-fill ph-sparkle"></i>
+          <span>Thought of the Moment</span>
+        </div>
+        <button type="button" class="quote-splash-skip-corner-btn" id="quote-splash-corner-skip" title="Enter immediately (or press Space / Esc)" onclick="if(window.dismissQuoteSplash)window.dismissQuoteSplash();">
+          <span>Skip</span> <kbd>Esc</kbd>
+        </button>
+      </div>
+
+      <div class="quote-splash-glyph-wrap">
+        <i class="ph-fill ph-quotes quote-splash-glyph"></i>
+      </div>
+
+      <blockquote id="quote-splash-text" class="quote-splash-text">
+        “Knowing yourself is the beginning of all wisdom.”
+      </blockquote>
+
+      <div class="quote-splash-meta" id="quote-splash-meta">
+        <span class="quote-splash-line"></span>
+        <cite id="quote-splash-author" class="quote-splash-author">Aristotle</cite>
+        <span class="quote-splash-tag" id="quote-splash-tag">Wisdom</span>
+      </div>
+
+      <div class="quote-splash-actions">
+        <button type="button" class="quote-splash-btn quote-splash-shuffle-btn" id="quote-splash-shuffle-btn" title="Discover another thought" onclick="if(window.shuffleSplashQuote)window.shuffleSplashQuote();">
+          <i class="ph-bold ph-shuffle"></i> <span>Another thought</span>
+        </button>
+        <button type="button" class="quote-splash-btn quote-splash-enter-btn" id="quote-splash-enter-btn" title="Enter music player" onclick="if(window.dismissQuoteSplash)window.dismissQuoteSplash();">
+          <span>Enter Sanctuary</span> <i class="ph-bold ph-arrow-right"></i>
+        </button>
+      </div>
+
+      <div class="quote-splash-hint" onclick="if(window.dismissQuoteSplash)window.dismissQuoteSplash();">
+        Touch anywhere on screen or press <kbd>Space</kbd> to enter
+      </div>
+    </div>
+  </div>
+

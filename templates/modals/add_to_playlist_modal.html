@@ -1,0 +1,37 @@
+  <dialog id="add-to-playlist-sheet">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">CURATION</p>
+        <h2 id="add-to-playlist-title">Add to Playlist</h2>
+      </div>
+      <button type="button" class="round-action" id="add-to-playlist-close"><i class="ph ph-x"></i></button>
+    </div>
+    <p class="muted" id="add-to-playlist-track-name" style="margin-bottom:12px;font-size:13px;">Select a playlist:</p>
+
+    <!-- Dynamic Queue Scope Selector (Shown when adding from queue) -->
+    <div id="add-to-playlist-queue-options" style="display:none;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Choose Queue Scope:</div>
+      <div style="display:flex;gap:8px;">
+        <label style="flex:1;display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:6px;border:1px solid var(--border);">
+          <input type="radio" name="queue_scope" value="all" checked id="queue-scope-all">
+          <span id="queue-scope-all-label">All in Queue</span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:6px;border:1px solid var(--border);">
+          <input type="radio" name="queue_scope" value="upcoming" id="queue-scope-upcoming">
+          <span id="queue-scope-upcoming-label">Upcoming Only</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Quick New Playlist Creation -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input type="text" id="add-to-playlist-inline-name" class="field-input" placeholder="Create new playlist name..." style="padding:10px 12px;font-size:13px;flex:1;">
+      <button type="button" class="btn-primary" id="add-to-playlist-inline-create-btn" style="white-space:nowrap;padding:8px 14px;font-size:13px;"><i class="ph ph-plus"></i> Create</button>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:6px;">Or add to existing playlist:</div>
+    <div class="playlist-select-list" id="playlist-select-list" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:16px;"></div>
+    <div class="dialog-actions" style="display:flex;justify-content:flex-end;align-items:center;">
+      <button type="button" class="btn-secondary" id="add-to-playlist-cancel">Cancel</button>
+    </div>
+  </dialog>

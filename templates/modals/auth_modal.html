@@ -1,0 +1,52 @@
+<!-- Fullscreen Glassmorphism Lock Screen (shown if passcode protection active) -->
+<div id="linus-lock-overlay" class="linus-lock-overlay hidden">
+  <div class="lock-card">
+    <div class="lock-icon-wrap">
+      <i class="ph-fill ph-lock-key"></i>
+    </div>
+    <h2 class="lock-title">Linus Protected</h2>
+    <p class="lock-subtitle">This music server is passcode protected</p>
+
+    <form id="lock-form" class="lock-form" onsubmit="return false;">
+      <div class="lock-input-wrap">
+        <input type="password" id="lock-pin-input" class="lock-input" placeholder="Enter PIN / Passcode" autocomplete="current-password">
+        <button type="submit" id="lock-submit-btn" class="lock-submit-btn"><i class="ph-bold ph-arrow-right"></i></button>
+      </div>
+      <div id="lock-error-msg" class="lock-error hidden">Invalid passcode. Please try again.</div>
+    </form>
+  </div>
+</div>
+
+<!-- PIN Settings Dialog -->
+<dialog id="pin-settings-dialog" class="pin-settings-dialog">
+  <div class="dialog-header">
+    <div>
+      <p class="eyebrow">SECURITY</p>
+      <h2>LAN Passcode Lock</h2>
+    </div>
+    <button class="round-action" id="pin-settings-close"><i class="ph ph-x"></i></button>
+  </div>
+
+  <div class="pin-settings-body" style="padding: 10px 0 20px 0;">
+    <p class="muted text-sm mb-4">
+      Protect your Linus music player from unauthorized playback control or playlist modifications when running on LAN or Docker.
+    </p>
+
+    <div class="field-group mb-3">
+      <label>Current Passcode (leave empty if none is set)</label>
+      <input type="password" id="pin-current-input" class="field-input" placeholder="Current passcode">
+    </div>
+
+    <div class="field-group mb-4">
+      <label>New Passcode (leave empty to disable protection)</label>
+      <input type="password" id="pin-new-input" class="field-input" placeholder="Enter new passcode (e.g. 1234)">
+    </div>
+
+    <div id="pin-settings-status" class="text-sm mb-3"></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn-primary" id="pin-save-btn"><i class="ph-bold ph-check"></i> Save Passcode</button>
+      <button class="soft-button" id="pin-logout-btn" style="color:#ef4444;"><i class="ph ph-sign-out"></i> Lock Now</button>
+    </div>
+  </div>
+</dialog>

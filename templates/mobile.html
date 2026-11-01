@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Linus Mobile — YouTube & Local Music</title>
+
+  <!-- PWA & Mobile Meta -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0b0e14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Linus">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Mobile App Styles -->
+  <link rel="stylesheet" href="/static/mobile.css?v=2.0">
+</head>
+<body class="mobile-app">
+  <!-- Dynamic Ambient Mesh Backdrop (Apple Music style) -->
+  <div id="ambient-backdrop" class="ambient-backdrop">
+    <div class="ambient-blob blob-1"></div>
+    <div class="ambient-blob blob-2"></div>
+    <div class="ambient-blob blob-3"></div>
+  </div>
+  <div class="ambient-blur-overlay"></div>
+
+  <!-- Notification Toast -->
+  <div id="mobile-toast" class="mobile-toast hidden">
+    <i class="ph-bold ph-info" id="toast-icon"></i>
+    <span id="toast-text">Message</span>
+  </div>
+
+  <!-- App Header -->
+  <header class="mobile-header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <i class="ph-fill ph-waveform"></i>
+      </div>
+      <div class="brand-info">
+        <h1 class="brand-title">Linus</h1>
+        <span class="brand-subtitle" id="connection-status">
+          <span class="status-dot online"></span> Mobile Edition
+        </span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="btn-sleep-timer-header" title="Sleep Timer">
+        <i class="ph ph-timer"></i>
+        <span class="badge-dot hidden" id="sleep-badge-header"></span>
+      </button>
+      <a href="/?view=desktop" class="header-btn" title="Switch to Desktop Mode">
+        <i class="ph ph-desktop"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Views Container -->
+  <main class="mobile-views-container">
+
+    <!-- ==================== VIEW 1: YOUTUBE MUSIC ==================== -->
+    <section id="view-youtube" class="mobile-view active">
+      <div class="view-header-strip">
+        <div class="source-badge badge-youtube">
+          <i class="ph-fill ph-youtube-logo"></i> YouTube Music
+        </div>
+        <span class="strip-note">Stream directly • No ads</span>
+      </div>
+
+      <!-- YouTube Search Bar -->
+      <div class="mobile-search-box">
+        <i class="ph ph-magnifying-glass search-icon"></i>
+        <input type="search" id="yt-search-input" placeholder="Search YouTube songs, artists, videos..." autocomplete="off">
+        <button class="search-clear-btn hidden" id="yt-search-clear">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Quick Vibe Chips -->
+      <div class="quick-chips-scroll">
+        <button class="vibe-chip active" data-query="Trending Music 2026">
+          <i class="ph-fill ph-fire"></i> Trending
+        </button>
+        <button class="vibe-chip" data-query="Lofi hip hop beats chill study">
+          <i class="ph-fill ph-coffee"></i> Chill Lofi
+        </button>
+        <button class="vibe-chip" data-query="Top Global Pop Hits">
+          <i class="ph-fill ph-sparkle"></i> Pop Hits
+        </button>
+        <button class="vibe-chip" data-query="Latest Bollywood Hits Hindi songs">
+          <i class="ph-fill ph-music-notes"></i> Bollywood
+        </button>
+        <button class="vibe-chip" data-query="Electronic EDM party dance">
+          <i class="ph-fill ph-lightning"></i> EDM
+        </button>
+        <button class="vibe-chip" data-query="Acoustic peaceful guitar songs">
+          <i class="ph-fill ph-guitar"></i> Acoustic
+        </button>
+        <button class="vibe-chip" data-query="Rock classics alternative">
+          <i class="ph-fill ph-speaker-simple-high"></i> Rock
+        </button>
+      </div>
+
+      <!-- YouTube Loading Spinner -->
+      <div id="yt-loader" class="view-loader hidden">
+        <div class="spinner"></div>
+        <span>Searching YouTube...</span>
+      </div>
+
+      <!-- YouTube Track Cards Feed -->
+      <div class="section-title-row">
+        <h2 id="yt-section-title">Trending on YouTube</h2>
+        <span class="section-count" id="yt-results-count">12 tracks</span>
+      </div>
+
+      <div id="yt-tracks-list" class="cards-feed">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: LOCAL STORAGE ==================== -->
+    <section id="view-local" class="mobile-view">
+      <div class="view-header-strip">
+        <div class="source-badge badge-local">
+          <i class="ph-fill ph-folder"></i> Local Storage
+        </div>
+        <span class="strip-note" id="local-status-text">100% Offline • Zero data</span>
+      </div>
+
+      <!-- Local Search & Filter -->
+      <div class="mobile-search-box">
+        <i class="ph ph-magnifying-glass search-icon"></i>
+        <input type="search" id="local-search-input" placeholder="Search local songs, artists, albums..." autocomplete="off">
+        <button class="search-clear-btn hidden" id="local-search-clear">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Local Sub-category Filter Pills -->
+      <div class="segmented-control">
+        <button class="segment-btn active" data-filter="all">All Songs</button>
+        <button class="segment-btn" data-filter="artists">Artists</button>
+        <button class="segment-btn" data-filter="albums">Albums</button>
+        <button class="segment-btn" data-filter="folders">Folders</button>
+      </div>
+
+      <!-- Local Quick Action Buttons -->
+      <div class="local-actions-row">
+        <button class="action-pill-btn" id="btn-play-all-local">
+          <i class="ph-fill ph-play"></i> Play All
+        </button>
+        <button class="action-pill-btn" id="btn-shuffle-local">
+          <i class="ph-fill ph-shuffle"></i> Shuffle
+        </button>
+        <button class="action-pill-btn secondary" id="btn-rescan-local" title="Rescan local files">
+          <i class="ph ph-arrows-clockwise"></i> Rescan
+        </button>
+      </div>
+
+      <!-- Local Loading Spinner -->
+      <div id="local-loader" class="view-loader hidden">
+        <div class="spinner"></div>
+        <span>Loading local library...</span>
+      </div>
+
+      <!-- Empty State -->
+      <div id="local-empty-state" class="empty-state hidden">
+        <i class="ph ph-music-notes-simple"></i>
+        <h3>No Local Songs Found</h3>
+        <p>Songs you download or add to your Linus downloads folder will appear here for offline playback.</p>
+        <button class="primary-btn" id="btn-go-to-youtube">
+          <i class="ph-fill ph-youtube-logo"></i> Search YouTube Music
+        </button>
+      </div>
+
+      <!-- Local Track List -->
+      <div id="local-tracks-list" class="track-list">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: UNIFIED SEARCH ==================== -->
+    <section id="view-search" class="mobile-view">
+      <div class="search-hero">
+        <h2 class="search-hero-title">Search</h2>
+        <p class="search-hero-subtitle">Find songs on YouTube or in Local Storage</p>
+      </div>
+
+      <!-- Separated Mode Toggle -->
+      <div class="search-source-toggle">
+        <button class="source-toggle-btn active" id="search-toggle-yt">
+          <i class="ph-fill ph-youtube-logo"></i> YouTube Music
+        </button>
+        <button class="source-toggle-btn" id="search-toggle-local">
+          <i class="ph-fill ph-folder"></i> Local Storage
+        </button>
+      </div>
+
+      <!-- Unified Search Input -->
+      <div class="mobile-search-box search-large">
+        <i class="ph ph-magnifying-glass search-icon"></i>
+        <input type="search" id="unified-search-input" placeholder="Search YouTube Music..." autocomplete="off">
+        <button class="search-clear-btn hidden" id="unified-search-clear">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Recent Searches Chips -->
+      <div id="recent-searches-section" class="recent-searches-box">
+        <div class="recent-header">
+          <span>Recent Searches</span>
+          <button id="btn-clear-recent-searches" class="text-link-btn">Clear</button>
+        </div>
+        <div id="recent-search-chips" class="quick-chips-scroll">
+          <!-- Recent search chips -->
+        </div>
+      </div>
+
+      <!-- Search Loading Indicator -->
+      <div id="search-loader" class="view-loader hidden">
+        <div class="spinner"></div>
+        <span id="search-loader-text">Searching...</span>
+      </div>
+
+      <!-- Search Results Container -->
+      <div id="search-results-list" class="track-list">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: LIBRARY & FAVORITES ==================== -->
+    <section id="view-library" class="mobile-view">
+      <div class="library-profile-header">
+        <div class="profile-avatar">
+          <i class="ph-fill ph-user"></i>
+        </div>
+        <div class="profile-info">
+          <h2>Your Collection</h2>
+          <span id="lib-summary-text">0 local tracks • 0 favorites</span>
+        </div>
+      </div>
+
+      <!-- Quick Library Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card" id="card-favorites-tab">
+          <i class="ph-fill ph-heart stat-icon text-red"></i>
+          <span class="stat-num" id="stat-favorites-count">0</span>
+          <span class="stat-label">Favorites</span>
+        </div>
+        <div class="stat-card" id="card-downloads-tab">
+          <i class="ph-fill ph-cloud-arrow-down stat-icon text-teal"></i>
+          <span class="stat-num" id="stat-downloads-count">0</span>
+          <span class="stat-label">Offline Ready</span>
+        </div>
+        <div class="stat-card" id="card-history-tab">
+          <i class="ph-fill ph-clock-counter-clockwise stat-icon text-blue"></i>
+          <span class="stat-num" id="stat-history-count">0</span>
+          <span class="stat-label">History</span>
+        </div>
+      </div>
+
+      <!-- Sub tabs for Library -->
+      <div class="segmented-control mt-4">
+        <button class="segment-btn active" id="lib-tab-favs">❤️ Favorites</button>
+        <button class="segment-btn" id="lib-tab-cached">📥 Downloads</button>
+        <button class="segment-btn" id="lib-tab-recents">🕒 History</button>
+      </div>
+
+      <!-- Library Tracks List -->
+      <div id="library-tracks-list" class="track-list">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Smartphone Sleep Timer Card -->
+      <div class="smart-feature-card mt-6">
+        <div class="feature-card-content">
+          <div class="feature-card-icon">
+            <i class="ph-fill ph-moon-stars"></i>
+          </div>
+          <div class="feature-card-text">
+            <h4>Bedtime Sleep Timer</h4>
+            <p id="sleep-timer-card-status">No active timer. Fall asleep to music without draining battery.</p>
+          </div>
+        </div>
+        <button class="feature-card-btn" id="btn-open-sleep-timer-card">Configure</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== FLOATING MINI PLAYER (APPLE/SPOTIFY STYLE) ==================== -->
+  <aside id="mini-player" class="mini-player-container hidden">
+    <!-- Progress Indicator Bar -->
+    <div class="mini-progress-track">
+      <div id="mini-progress-fill" class="mini-progress-fill"></div>
+    </div>
+
+    <div class="mini-player-body">
+      <!-- Thumbnail -->
+      <div class="mini-art-wrapper">
+        <img id="mini-art-img" src="/static/icons/icon-192.png" alt="Artwork" class="mini-art-img">
+        <div id="mini-stream-indicator" class="mini-stream-badge">
+          <span class="badge-text" id="mini-source-badge">YT</span>
+        </div>
+      </div>
+
+      <!-- Track Info -->
+      <div class="mini-track-info">
+        <div class="mini-title-marquee">
+          <span id="mini-track-title" class="mini-title">No Track Playing</span>
+        </div>
+        <span id="mini-track-artist" class="mini-artist">Select a song to start</span>
+      </div>
+
+      <!-- Controls -->
+      <div class="mini-controls">
+        <button class="mini-ctrl-btn" id="mini-btn-play" title="Play/Pause">
+          <i class="ph-fill ph-play" id="mini-play-icon"></i>
+        </button>
+        <button class="mini-ctrl-btn" id="mini-btn-next" title="Next Track">
+          <i class="ph-fill ph-skip-forward"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== NATIVE BOTTOM NAVIGATION BAR ==================== -->
+  <nav class="mobile-tab-bar" aria-label="Main Navigation">
+    <button class="tab-item active" data-tab="view-youtube">
+      <div class="tab-icon-wrap">
+        <i class="ph-fill ph-youtube-logo"></i>
+      </div>
+      <span>YouTube</span>
+    </button>
+    <button class="tab-item" data-tab="view-local">
+      <div class="tab-icon-wrap">
+        <i class="ph-bold ph-folder-simple"></i>
+      </div>
+      <span>Local</span>
+    </button>
+    <button class="tab-item" data-tab="view-search">
+      <div class="tab-icon-wrap">
+        <i class="ph-bold ph-magnifying-glass"></i>
+      </div>
+      <span>Search</span>
+    </button>
+    <button class="tab-item" data-tab="view-library">
+      <div class="tab-icon-wrap">
+        <i class="ph-bold ph-heart"></i>
+      </div>
+      <span>Library</span>
+    </button>
+  </nav>
+
+  <!-- ==================== FULL-SCREEN NOW PLAYING MODAL (APPLE MUSIC STYLE) ==================== -->
+  <div id="full-player-sheet" class="full-player-sheet hidden">
+    <!-- Top Pull Handle (Swipe down to close) -->
+    <div class="player-sheet-header">
+      <button class="sheet-close-btn" id="btn-close-full-player" title="Minimize player">
+        <i class="ph-bold ph-caret-down"></i>
+      </button>
+      <div class="sheet-header-title">
+        <span class="sheet-playing-label">NOW PLAYING</span>
+        <span class="sheet-source-pill" id="sheet-source-pill">YouTube Stream</span>
+      </div>
+      <button class="sheet-header-btn" id="btn-header-queue" title="Up Next Queue">
+        <i class="ph-bold ph-playlist"></i>
+      </button>
+    </div>
+
+    <!-- Sheet Content Area -->
+    <div class="full-player-content">
+      <!-- Big Artwork / Lyrics Container (Tap to toggle lyrics) -->
+      <div class="artwork-carousel-container" id="artwork-container">
+        <div class="artwork-card" id="artwork-card">
+          <img id="full-artwork-img" src="/static/icons/icon-512.png" alt="Album Cover" class="full-art-image">
+          <div class="art-glow" id="art-glow"></div>
+        </div>
+
+        <!-- Apple Music Style Synced Lyrics Display -->
+        <div id="full-lyrics-container" class="full-lyrics-container hidden">
+          <div class="lyrics-header">
+            <span>Synchronized Lyrics</span>
+            <button class="lyrics-close-btn" id="btn-close-lyrics-view">
+              <i class="ph-bold ph-x"></i>
+            </button>
+          </div>
+          <div id="lyrics-lines-wrapper" class="lyrics-lines-wrapper">
+            <p class="lyrics-placeholder">Tap a line to seek to that timestamp.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Track Information & Favorite Heart -->
+      <div class="full-track-meta">
+        <div class="meta-text-block">
+          <h2 id="full-track-title" class="full-track-title">Select a Song</h2>
+          <p id="full-track-artist" class="full-track-artist">Linus Player</p>
+        </div>
+        <button class="fav-heart-btn" id="full-btn-fav" title="Add to Favorites">
+          <i class="ph-bold ph-heart" id="full-fav-icon"></i>
+        </button>
+      </div>
+
+      <!-- Scrubber & Timers -->
+      <div class="full-scrubber-container">
+        <div class="scrub-slider-wrap">
+          <input type="range" id="full-scrub-slider" min="0" max="100" value="0" step="0.1" class="scrub-slider">
+          <div id="scrub-progress-fill" class="scrub-progress-fill"></div>
+        </div>
+        <div class="scrub-time-row">
+          <span id="full-time-elapsed">0:00</span>
+          <span id="full-time-remaining">-0:00</span>
+        </div>
+      </div>
+
+      <!-- Primary Playback Controls -->
+      <div class="full-controls-row">
+        <button class="ctrl-btn-secondary" id="full-btn-shuffle" title="Shuffle">
+          <i class="ph-bold ph-shuffle"></i>
+        </button>
+        <button class="ctrl-btn-skip" id="full-btn-prev" title="Previous Track">
+          <i class="ph-fill ph-skip-back"></i>
+        </button>
+        <button class="ctrl-btn-play-pause" id="full-btn-play" title="Play/Pause">
+          <i class="ph-fill ph-play" id="full-play-icon"></i>
+        </button>
+        <button class="ctrl-btn-skip" id="full-btn-next" title="Next Track">
+          <i class="ph-fill ph-skip-forward"></i>
+        </button>
+        <button class="ctrl-btn-secondary" id="full-btn-repeat" title="Repeat Mode">
+          <i class="ph-bold ph-repeat" id="full-repeat-icon"></i>
+        </button>
+      </div>
+
+      <!-- Smartphone Smart Action Bar -->
+      <div class="full-smart-actions-bar">
+        <button class="smart-action-btn" id="btn-toggle-lyrics" title="Live Lyrics">
+          <i class="ph-fill ph-microphone-stage"></i>
+          <span>Lyrics</span>
+        </button>
+        <button class="smart-action-btn" id="btn-open-sleep-timer" title="Sleep Timer">
+          <i class="ph-fill ph-timer"></i>
+          <span id="sleep-btn-label">Timer</span>
+        </button>
+        <button class="smart-action-btn" id="btn-save-to-local" title="Download to Local Storage">
+          <i class="ph-fill ph-download-simple" id="save-local-icon"></i>
+          <span id="save-local-label">Download</span>
+        </button>
+        <button class="smart-action-btn" id="btn-open-queue" title="Up Next Queue">
+          <i class="ph-fill ph-queue"></i>
+          <span>Queue</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLEEP TIMER SHEET ==================== -->
+  <div id="sleep-timer-sheet" class="bottom-sheet-modal hidden">
+    <div class="sheet-backdrop" id="sleep-timer-backdrop"></div>
+    <div class="sheet-card">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header">
+        <h3><i class="ph-fill ph-moon"></i> Sleep Timer</h3>
+        <button class="sheet-icon-close" id="btn-close-sleep-sheet">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+      <p class="sheet-desc">Audio gently fades out and stops when the timer expires.</p>
+      
+      <div class="sleep-options-list">
+        <button class="sleep-option" data-minutes="15">
+          <span>15 Minutes</span>
+          <i class="ph-bold ph-check checkmark hidden"></i>
+        </button>
+        <button class="sleep-option" data-minutes="30">
+          <span>30 Minutes</span>
+          <i class="ph-bold ph-check checkmark hidden"></i>
+        </button>
+        <button class="sleep-option" data-minutes="45">
+          <span>45 Minutes</span>
+          <i class="ph-bold ph-check checkmark hidden"></i>
+        </button>
+        <button class="sleep-option" data-minutes="60">
+          <span>1 Hour</span>
+          <i class="ph-bold ph-check checkmark hidden"></i>
+        </button>
+        <button class="sleep-option" data-minutes="end_of_track">
+          <span>End of Current Song</span>
+          <i class="ph-bold ph-check checkmark hidden"></i>
+        </button>
+        <button class="sleep-option text-red" data-minutes="0" id="btn-cancel-sleep-timer">
+          <span>Turn Timer Off</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== UP NEXT QUEUE SHEET ==================== -->
+  <div id="queue-sheet" class="bottom-sheet-modal hidden">
+    <div class="sheet-backdrop" id="queue-sheet-backdrop"></div>
+    <div class="sheet-card queue-sheet-card">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header">
+        <h3><i class="ph-fill ph-queue"></i> Up Next Queue</h3>
+        <button class="text-link-btn text-red" id="btn-clear-queue">Clear</button>
+      </div>
+      
+      <div class="queue-current-section">
+        <span class="queue-section-heading">Now Playing</span>
+        <div id="queue-current-track-item">
+          <!-- Current song item -->
+        </div>
+      </div>
+
+      <div class="queue-upcoming-section">
+        <span class="queue-section-heading">Up Next (<span id="queue-count">0</span>)</span>
+        <div id="queue-tracks-list" class="queue-tracks-list">
+          <!-- Queue items -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Element -->
+  <audio id="global-audio-player" preload="metadata"></audio>
+
+  <!-- Mobile JavaScript Engine -->
+  <script src="/static/mobile.js?v=2.0"></script>
+</body>
+</html>

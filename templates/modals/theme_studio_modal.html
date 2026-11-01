@@ -1,0 +1,354 @@
+  <dialog id="theme-studio-sheet" class="modal-sheet theme-studio-modal">
+    <div class="studio-modal-container">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow" style="margin:0;">CREATIVE SUITE</p>
+          <h2 style="font-size:24px;margin:4px 0 0;">Personalization & Atmosphere Studio</h2>
+        </div>
+        <button type="button" class="round-action" id="theme-studio-close"><i class="ph ph-x"></i></button>
+      </div>
+
+      <!-- Studio Navigation Tabs -->
+      <div class="studio-tabs-row">
+        <button class="studio-tab-btn active" data-tab="colors"><i class="ph-fill ph-palette"></i> Colors & Fonts</button>
+        <button class="studio-tab-btn" data-tab="wallpapers"><i class="ph-fill ph-film-strip"></i> Live Wallpapers & Video</button>
+        <button class="studio-tab-btn" data-tab="effects"><i class="ph-fill ph-sparkle"></i> Aesthetics & Vinyl</button>
+      </div>
+
+      <!-- Tab 1: Colors & Typography -->
+      <div class="studio-tab-content active" id="tab-colors">
+        <div class="studio-section-title">
+          <span>🎨 Real-Time Color Palette</span>
+          <button class="btn-secondary btn-sm" id="reset-colors-btn"><i class="ph ph-arrow-counter-clockwise"></i> Reset Colors</button>
+        </div>
+
+        <div class="color-pickers-grid">
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Accent Glow</strong>
+              <span class="color-val" id="val-accent">#e5a95d</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-accent" value="#e5a95d">
+              <span>Buttons, highlights & neon glow</span>
+            </div>
+          </div>
+
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Background</strong>
+              <span class="color-val" id="val-bg">#0d0a08</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-bg" value="#0d0a08">
+              <span>Deep canvas backdrop color</span>
+            </div>
+          </div>
+
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Cards & Surface</strong>
+              <span class="color-val" id="val-surface">#17120e</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-surface" value="#17120e">
+              <span>Panels, sidebar & player bar</span>
+            </div>
+          </div>
+
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Text & Titles</strong>
+              <span class="color-val" id="val-text">#fdf6ec</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-text" value="#fdf6ec">
+              <span>Headings, body & navigation</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="studio-section-title" style="margin-top:20px;">
+          <span>✍️ Typography Aesthetics</span>
+        </div>
+        <div class="font-presets-grid">
+          <button class="font-preset-btn active" data-font="serif">
+            <strong style="font-family:'Instrument Serif', serif;font-size:20px;">Instrument Serif</strong>
+            <span>Editorial, poetic & serene</span>
+          </button>
+          <button class="font-preset-btn" data-font="sans">
+            <strong style="font-family:'Outfit', sans-serif;font-size:16px;">Outfit Modern Sans</strong>
+            <span>Minimalist, clean & geometric</span>
+          </button>
+          <button class="font-preset-btn" data-font="mono">
+            <strong style="font-family:monospace;font-size:15px;">Cyberpunk Monospace</strong>
+            <span>Retro terminal & sci-fi</span>
+          </button>
+          <button class="font-preset-btn" data-font="cursive">
+            <strong style="font-family:'Playfair Display', Georgia, serif;font-size:18px;">Playfair Classic</strong>
+            <span>Luxury & high-end elegance</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Wallpapers & Live Atmosphere -->
+      <div class="studio-tab-content hidden" id="tab-wallpapers">
+        <!-- Sub-Folder Navigation Pill Tabs (Wallpapers First, Live Videos Second) -->
+        <div class="studio-subfolder-nav">
+          <button class="subfolder-pill-btn active" data-subfolder="photos"><i class="ph-fill ph-image"></i> Wallpapers</button>
+          <button class="subfolder-pill-btn" data-subfolder="videos"><i class="ph-fill ph-film-strip"></i> Live Videos</button>
+        </div>
+
+        <!-- FOLDER 1 (DEFAULT): Aesthetic Wallpapers with Most Used Front Page -->
+        <div class="subfolder-view active" id="subfolder-photos">
+          <div class="studio-section-title">
+            <span>⭐ Most Used & Popular Wallpapers</span>
+            <button type="button" class="btn-secondary btn-sm" id="open-wallpaper-gallery-btn"><i class="ph-fill ph-squares-four"></i> See More (50+)</button>
+          </div>
+
+          <!-- Dynamic Front Page Top Shelf Grid (Sorted by user clicks & popularity) -->
+          <div class="live-wallpaper-grid" id="featured-wallpapers-grid">
+            <!-- Dynamically populated by renderFeaturedWallpapersTray() -->
+          </div>
+
+          <!-- Large 'See More Wallpapers' Interactive Banner -->
+          <div class="see-more-wallpaper-card" id="see-more-banner-btn">
+            <div class="see-more-content">
+              <div class="see-more-icon"><i class="ph-fill ph-images"></i></div>
+              <div>
+                <strong>Explore Full 50+ Wallpaper Gallery</strong>
+                <span class="muted" style="font-size:12px;">Anime, Cyberpunk, Nature, Space, Minimalist & Cozy collections</span>
+              </div>
+            </div>
+            <span class="see-more-btn-action"><i class="ph-bold ph-arrow-right"></i> Open Gallery</span>
+          </div>
+        </div>
+
+        <!-- FOLDER 2: Live Video Loops -->
+        <div class="subfolder-view hidden" id="subfolder-videos">
+          <div class="studio-section-title">
+            <span>🎬 Curated Atmospheric Live Video Loops</span>
+          </div>
+
+          <div class="live-wallpaper-grid">
+            <button class="wallpaper-card active" data-wp="aura">
+              <div class="wallpaper-thumb-preview swatch-aura-live"></div>
+              <strong>🎨 Dynamic Living Aura</strong>
+              <span>Fluid audio pulse gradient</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="lofi">
+              <div class="wallpaper-thumb-preview wp-lofi-thumb"></div>
+              <strong>☕ Lo-Fi Rainy Window</strong>
+              <span>Cozy rain on nighttime window</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="fireplace">
+              <div class="wallpaper-thumb-preview wp-fire-thumb"></div>
+              <strong>🔥 Campfire Hearth</strong>
+              <span>Warm flickering campfire</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="cyber">
+              <div class="wallpaper-thumb-preview wp-cyber-thumb"></div>
+              <strong>🌆 Synthwave Neon City</strong>
+              <span>Cyberpunk highway traffic glow</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="space">
+              <div class="wallpaper-thumb-preview wp-space-thumb"></div>
+              <strong>🌌 Deep Starfield Nebula</strong>
+              <span>Cosmic star movement</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="ocean">
+              <div class="wallpaper-thumb-preview wp-ocean-thumb"></div>
+              <strong>🌊 Sunset Ocean Waves</strong>
+              <span>Calm coastal shoreline tide</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="sunset_drive">
+              <div class="wallpaper-thumb-preview wp-drive-thumb"></div>
+              <strong>🚗 Retro Sunset Drive</strong>
+              <span>80s Synth sunset cruise</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="tokyo_night">
+              <div class="wallpaper-thumb-preview wp-tokyo-thumb"></div>
+              <strong>🏮 Tokyo Rainy Night</strong>
+              <span>Neon rain alleyway</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="mountain_clouds">
+              <div class="wallpaper-thumb-preview wp-mountain-thumb"></div>
+              <strong>⛰️ Mountain Cloud Flow</strong>
+              <span>Majestic alpine sunset mist</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="aurora_borealis">
+              <div class="wallpaper-thumb-preview wp-aurora-thumb"></div>
+              <strong>✨ Northern Aurora Skies</strong>
+              <span>Emerald polar aurora</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="cozy_coffee">
+              <div class="wallpaper-thumb-preview wp-coffee-thumb"></div>
+              <strong>☕ Cozy Cafe Steaming Mug</strong>
+              <span>Warm rainy cafe atmosphere</span>
+            </button>
+
+            <button class="wallpaper-card" data-wp="neon_tunnel">
+              <div class="wallpaper-thumb-preview wp-tunnel-thumb"></div>
+              <strong>⚡ Hyper Neon Cyber Tunnel</strong>
+              <span>Futuristic optical warp speed</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- OUTSIDE FOLDERS: Custom Upload Boxes for Personal Photo & Video -->
+        <div class="studio-section-title" style="margin-top:20px;">
+          <span>📁 Import Personal Custom Media (Outside Folders)</span>
+        </div>
+
+        <div class="custom-media-import-deck">
+          <!-- Custom Photo Import Card -->
+          <div class="media-import-card">
+            <div class="import-card-header">
+              <div class="import-icon-box"><i class="ph-fill ph-image"></i></div>
+              <div>
+                <strong>Custom Photo / Wallpaper</strong>
+                <span>Upload any photo file or paste image URL</span>
+              </div>
+            </div>
+            <div class="import-inputs-row">
+              <input type="file" id="custom-wallpaper-file" accept="image/*" class="field-input">
+              <input type="url" id="custom-wallpaper-url" placeholder="Or paste direct image URL (https://...)" class="field-input">
+            </div>
+          </div>
+
+          <!-- Custom Video Import Card -->
+          <div class="media-import-card">
+            <div class="import-card-header">
+              <div class="import-icon-box"><i class="ph-fill ph-video-camera"></i></div>
+              <div>
+                <strong>Custom Live Video Loop</strong>
+                <span>Upload any MP4 / WebM video or paste video URL</span>
+              </div>
+            </div>
+            <div class="import-inputs-row">
+              <input type="file" id="custom-video-file" accept="video/mp4, video/webm" class="field-input">
+              <input type="url" id="custom-video-url" placeholder="Or paste direct video URL (https://...mp4)" class="field-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-media-inputs-box hidden" id="custom-media-box">
+          <div class="field-group" id="custom-img-group"></div>
+          <div class="field-group hidden" id="custom-vid-group"></div>
+        </div>
+
+        <!-- Wallpaper Optics (Dim & Blur Sliders) -->
+        <div class="slider-controls-group" style="margin-top:18px;">
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Darkness & Readability Dimmer</span>
+              <strong id="val-wallpaper-dim">40%</strong>
+            </div>
+            <input type="range" id="slider-wallpaper-dim" min="0" max="90" value="40">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Background Blur Depth</span>
+              <strong id="val-wallpaper-blur">0px</strong>
+            </div>
+            <input type="range" id="slider-wallpaper-blur" min="0" max="40" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Aesthetics & Effects -->
+      <div class="studio-tab-content hidden" id="tab-effects">
+        <div class="studio-section-title">
+          <span>✨ Glassmorphism & Visual Radiance</span>
+        </div>
+
+        <div class="slider-controls-group">
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Card Glassmorphism Transparency</span>
+              <strong id="val-glass-opacity">75%</strong>
+            </div>
+            <input type="range" id="slider-glass-opacity" min="20" max="100" value="75">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Neon Glow & Shadow Radiance</span>
+              <strong id="val-glow-intensity">40%</strong>
+            </div>
+            <input type="range" id="slider-glow-intensity" min="0" max="100" value="40">
+          </div>
+        </div>
+
+        <div class="studio-section-title" style="margin-top:20px;">
+          <span>💿 Custom Vinyl Disc Label & Beat Pulse</span>
+        </div>
+
+        <div class="toggle-card-row">
+          <div class="toggle-card-info">
+            <strong>🎵 Sound-Reactive Beat Pulsing</strong>
+            <span>Gently scale living aura & glow to audio frequencies</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-beat-pulse" checked>
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+
+        <div class="toggle-card-row" style="margin-top:12px;">
+          <div class="toggle-card-info">
+            <strong>🏷️ Custom Vinyl Center Sticker</strong>
+            <span>Upload custom photo to replace vinyl center label</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="btn-secondary btn-sm" id="upload-disc-sticker-btn"><i class="ph ph-upload-simple"></i> Choose Image</button>
+            <button class="btn-secondary btn-sm" id="reset-disc-sticker-btn" title="Reset to default">Default</button>
+            <input type="file" id="custom-disc-sticker-file" accept="image/*" class="hidden">
+          </div>
+        </div>
+
+        <div class="studio-section-title" style="margin-top:20px;">
+          <span>💬 Welcome Quote Splash Screen</span>
+        </div>
+
+        <div class="toggle-card-row">
+          <div class="toggle-card-info">
+            <strong>✨ Show Inspirational Quote on Launch</strong>
+            <span>Display an inspiring musical reflection each time the sanctuary opens</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-welcome-quote" checked>
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+
+        <div class="toggle-card-row" style="margin-top:12px;" id="welcome-quote-freq-row">
+          <div class="toggle-card-info">
+            <strong>⏱️ Splash Frequency</strong>
+            <span>Choose how often quotes appear on startup</span>
+          </div>
+          <select id="welcome-quote-frequency" class="field-select" style="max-width:160px;padding:6px 10px;border-radius:8px;background:var(--surface-active);color:var(--text);border:1px solid var(--border);font-size:13px;">
+            <option value="always" selected>Every Launch</option>
+            <option value="daily">Once a Day</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="dialog-actions" style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+        <button type="button" class="btn-secondary" id="studio-reset-all-btn"><i class="ph ph-arrow-counter-clockwise"></i> Reset to Default</button>
+        <button type="button" class="btn-primary" id="studio-done-btn"><i class="ph-fill ph-check-circle"></i> Apply & Done</button>
+      </div>
+    </div>
+  </dialog>
+

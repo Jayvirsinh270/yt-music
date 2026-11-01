@@ -1,0 +1,109 @@
+      <header class="topbar">
+        <div class="topbar-left-group" style="display:flex;align-items:center;gap:10px;flex:1;max-width:440px;">
+          <!-- Mobile Hamburger Toggle -->
+          <button class="round-action mobile-menu-btn" id="mobile-menu-btn" title="Menu"><i class="ph ph-list"></i></button>
+          
+          <div class="topbar-search" id="topbar-search-wrap">
+            <i class="ph ph-magnifying-glass" id="topbar-search-icon" title="Search Spotlight (Ctrl+K)"></i>
+            <input 
+              id="search" 
+              name="music_sanctuary_search_query"
+              type="text" 
+              value=""
+              placeholder="Search tracks, artists or Ctrl+K..." 
+              autocomplete="one-time-code" 
+              autocorrect="off" 
+              autocapitalize="off" 
+              spellcheck="false"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+            >
+            <kbd class="search-kbd-hint" id="search-kbd-shortcut" title="Open Spotlight Command Palette (Ctrl+K)">Ctrl + K</kbd>
+          </div>
+        </div>
+        
+        <div class="topbar-actions">
+          <!-- 1-Click Online ⇄ Offline Smart Autoplay Radio Mode Toggle -->
+          <button class="cozy-quick-btn radio-mode-toggle-btn online" id="radio-mode-toggle-btn" title="Toggle Autoplay Mode: Online (YouTube infinite discovery) vs Offline (Local Library)">
+            <i class="ph-fill ph-globe" id="radio-mode-icon"></i>
+            <span id="radio-mode-text">Online Radio</span>
+          </button>
+
+          <!-- 1-Click Quick Cozy Mode Toggle -->
+          <button class="cozy-quick-btn" id="cozy-mode-quick-btn" title="Toggle Cozy Listening Mode (Candlelight & Rain)">
+            <i class="ph-fill ph-coffee"></i>
+            <span>Cozy Mode</span>
+          </button>
+
+          <!-- Linus Connect (Devices & Remote Control) -->
+          <button class="round-action" id="connect-devices-btn" title="Linus Connect: Active Devices & Remote Control">
+            <i class="ph-bold ph-devices"></i>
+          </button>
+
+          <!-- Vibe & Atmosphere Palette Switcher -->
+          <div class="vibe-switcher-wrapper">
+            <button class="round-action" id="theme-button" title="Atmospheric Moods & Vibes">
+              <i class="ph-fill ph-palette"></i>
+            </button>
+
+            <!-- Floating Vibe Selector Popover -->
+            <div class="vibe-popover" id="vibe-popover">
+              <div class="vibe-popover-header">
+                <span class="eyebrow" style="margin:0;">ATMOSPHERIC VIBES</span>
+              </div>
+              <div class="vibe-presets-grid">
+                <button class="vibe-preset-card active" data-vibe="cozy">
+                  <div class="vibe-swatch swatch-cozy"></div>
+                  <div class="vibe-meta">
+                    <strong>☕ Lo-Fi Cozy</strong>
+                    <span>Amber Firelight & Honey</span>
+                  </div>
+                </button>
+                <button class="vibe-preset-card" data-vibe="ecstatic">
+                  <div class="vibe-swatch swatch-ecstatic"></div>
+                  <div class="vibe-meta">
+                    <strong>🌌 Cyber Ecstatic</strong>
+                    <span>Electric Neon & Aurora</span>
+                  </div>
+                </button>
+                <button class="vibe-preset-card" data-vibe="sakura">
+                  <div class="vibe-swatch swatch-sakura"></div>
+                  <div class="vibe-meta">
+                    <strong>🌸 Sunset Sakura</strong>
+                    <span>Twilight Rose & Peach</span>
+                  </div>
+                </button>
+                <button class="vibe-preset-card" data-vibe="emerald">
+                  <div class="vibe-swatch swatch-emerald"></div>
+                  <div class="vibe-meta">
+                    <strong>🌲 Emerald Forest</strong>
+                    <span>Deep Moss & Tranquility</span>
+                  </div>
+                </button>
+                <button class="vibe-preset-card" data-vibe="ocean">
+                  <div class="vibe-swatch swatch-ocean"></div>
+                  <div class="vibe-meta">
+                    <strong>🌊 Midnight Ocean</strong>
+                    <span>Bioluminescent Aqua</span>
+                  </div>
+                </button>
+                <button class="vibe-preset-card" data-vibe="noir">
+                  <div class="vibe-swatch swatch-noir"></div>
+                  <div class="vibe-meta">
+                    <strong>🌑 Titanium Noir</strong>
+                    <span>Minimal Monochromatic</span>
+                  </div>
+                </button>
+              </div>
+
+              <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+                <button class="btn-primary" id="open-studio-customizer-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <i class="ph-fill ph-paint-brush-broad"></i> Open Full Studio Customizer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>

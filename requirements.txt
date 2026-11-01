@@ -1,0 +1,14 @@
+# Linus Music Player — Core Python Dependencies
+Flask>=3.0.0,<4.0.0          # Web framework
+mutagen>=1.47.0              # Audio metadata ID3/tags parsing
+requests>=2.32.0             # HTTP client for lyrics & network
+urllib3>=2.2.0               # Resilient HTTP transport
+yt-dlp>=2024.12.13           # YouTube search and audio stream extraction
+pypresence>=4.3.0            # Discord Rich Presence integration
+python-dotenv>=1.0.1         # Environment variable configuration (.env)
+Werkzeug>=3.0.0              # WSGI utility library
+
+# Optional Enhancements
+# pytest>=8.0.0              # Test suite execution
+# faster-whisper>=1.0.0      # Offline AI-powered lyrics forced alignment
+# google-generativeai>=0.8.0 # Cloud AI lyrics alignment fallback

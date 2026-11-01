@@ -1,0 +1,185 @@
+  <div class="player-bar">
+    <div class="now-playing">
+      <div class="now-art" id="now-art"><i class="ph-fill ph-music-note"></i></div>
+      <div class="now-info">
+        <strong id="now-title">Not playing</strong>
+        <span id="now-artist">-</span>
+      </div>
+      <div class="now-actions">
+        <button class="now-action-btn" id="now-start-radio-btn" title="Start Radio from this track"><i class="ph-bold ph-radio"></i></button>
+        <button class="now-action-btn" id="now-add-playlist" title="Add currently playing to playlist"><i class="ph ph-plus-circle"></i></button>
+        <button class="now-action-btn" id="now-fav-btn" title="Favorite"><i class="ph ph-star"></i></button>
+      </div>
+    </div>
+    
+    <div class="player-controls">
+      <div class="control-buttons">
+        <button class="ctrl-btn" id="shuffle-btn"><i class="ph ph-shuffle"></i></button>
+        <button class="ctrl-btn" id="previous"><i class="ph-fill ph-skip-back"></i></button>
+        <button class="ctrl-play" id="play"><i class="ph-fill ph-play"></i></button>
+        <button class="ctrl-btn" id="next"><i class="ph-fill ph-skip-forward"></i></button>
+        <button class="ctrl-btn" id="repeat-btn"><i class="ph ph-repeat"></i></button>
+        <button class="ctrl-btn" id="autodj-quick-btn" title="Toggle Smart Auto-DJ Beat-Matched Crossfader (D)"><i class="ph-fill ph-headphones"></i></button>
+      </div>
+      <div class="timeline">
+        <span id="current-time">0:00</span>
+        <div class="waveform-progress-wrap" id="waveform-progress-wrap">
+          <canvas id="waveform-canvas" class="waveform-canvas"></canvas>
+          <div class="waveform-hover-cue" id="waveform-hover-cue">
+            <span id="waveform-hover-time">0:00</span>
+          </div>
+          <input type="range" id="progress" min="0" max="100" value="0" aria-label="Playback progress">
+        </div>
+        <span id="total-time">0:00</span>
+      </div>
+    </div>
+    
+    <div class="player-actions">
+      <!-- Studio FX Popover Launcher -->
+      <div class="fx-launcher-wrapper">
+        <button class="player-fx-btn" id="fx-launcher-btn" title="Audio Studio & Enhancers">
+          <i class="ph-fill ph-sparkle"></i>
+          <span>FX</span>
+        </button>
+
+        <!-- Floating Quick FX Menu -->
+        <div class="studio-fx-popover" id="studio-fx-popover">
+          <div class="fx-popover-header">
+            <span class="eyebrow" style="margin:0;">AUDIO SUITE</span>
+          </div>
+          <div class="fx-popover-list">
+            <button class="fx-popover-item" id="norm-toggle-btn" title="Toggle Smart Gain Audio Normalization">
+              <div class="fx-item-icon"><i class="ph-bold ph-waveform"></i></div>
+              <div class="fx-item-meta">
+                <div class="norm-header-row">
+                  <strong>Smart Gain</strong>
+                  <span class="norm-status-pill on" id="norm-status-badge">ON</span>
+                </div>
+                <span id="norm-status-sub">Consistent loudness across tracks</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="hover-preview-toggle-btn" title="Toggle 20-Second Audio Preview Buttons">
+              <div class="fx-item-icon"><i class="ph-bold ph-speaker-simple-high"></i></div>
+              <div class="fx-item-meta">
+                <div class="norm-header-row">
+                  <strong>20s Audio Preview</strong>
+                  <span class="norm-status-pill on" id="hover-preview-status-badge">ON</span>
+                </div>
+                <span id="hover-preview-status-sub">Dedicated 20s preview buttons on songs</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="chameleon-toggle-btn" title="Toggle Dynamic Artwork Color Extraction">
+              <div class="fx-item-icon"><i class="ph-bold ph-palette"></i></div>
+              <div class="fx-item-meta">
+                <div class="norm-header-row">
+                  <strong>Chameleon Glow</strong>
+                  <span class="norm-status-pill on" id="chameleon-status-badge">ON</span>
+                </div>
+                <span id="chameleon-status-sub">Dynamic UI glow from album art</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="karaoke-toggle-btn" title="Toggle Instant Vocal Remover / Karaoke DSP">
+              <div class="fx-item-icon"><i class="ph-bold ph-microphone-slash"></i></div>
+              <div class="fx-item-meta">
+                <div class="norm-header-row">
+                  <strong>Karaoke Mode</strong>
+                  <span class="norm-status-pill off" id="karaoke-status-badge">OFF</span>
+                </div>
+                <span id="karaoke-status-sub">Real-time vocal suppression for singing</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="ambient-toggle-btn">
+              <div class="fx-item-icon"><i class="ph-bold ph-waves"></i></div>
+              <div class="fx-item-meta">
+                <div class="norm-header-row">
+                  <strong>Zen Soundstage</strong>
+                  <span class="norm-status-pill off" id="ambient-status-badge">OFF</span>
+                </div>
+                <span id="ambient-status-sub">Rain, vinyl crackle, hearth & binaural</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="eq-toggle-btn">
+              <div class="fx-item-icon"><i class="ph ph-sliders"></i></div>
+              <div class="fx-item-meta">
+                <strong>10-Band Equalizer</strong>
+                <span>8D Audio & sub-bass boost</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="crossfade-toggle-btn" title="Audiophile Seamless Crossfade & Gapless Transitions">
+              <div class="fx-item-icon"><i class="ph-bold ph-faders"></i></div>
+              <div class="fx-item-meta">
+                <div class="norm-header-row">
+                  <strong>Seamless Crossfade</strong>
+                  <span class="norm-status-pill on" id="crossfade-status-badge">4s Blend</span>
+                </div>
+                <span id="crossfade-status-sub">Zero-silence equal-power transitions</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="autodj-toggle-btn" title="Cycle Smart Auto-DJ Crossfade Modes">
+              <div class="fx-item-icon"><i class="ph-bold ph-headphones"></i></div>
+              <div class="fx-item-meta">
+                <div class="norm-header-row">
+                  <strong>Smart Auto-DJ</strong>
+                  <span class="norm-status-pill on" id="autodj-status-badge">4s DJ</span>
+                </div>
+                <span id="autodj-status-sub">Beat-matched equal-power blends</span>
+              </div>
+            </button>
+            <button class="fx-popover-item" id="pip-btn">
+              <div class="fx-item-icon"><i class="ph ph-picture-in-picture"></i></div>
+              <div class="fx-item-meta">
+                <strong>Desktop Mini Player</strong>
+                <span>Picture-in-Picture window</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="ctrl-btn" id="playback-speed-btn" title="Playback Speed" style="font-size:11px;font-weight:700;letter-spacing:0.5px;min-width:32px;display:flex;align-items:center;justify-content:center;">1x</button>
+      
+      <!-- Sleep Timer Quick Trigger -->
+      <div class="sleep-timer-quick-wrap" style="position:relative;">
+        <button class="ctrl-btn" id="sleep-timer-quick-btn" title="Sleep Timer">
+          <i class="ph ph-moon" id="sleep-quick-icon"></i>
+          <span class="sleep-quick-badge hidden" id="sleep-quick-badge"></span>
+        </button>
+        <div class="sleep-quick-popover" id="sleep-quick-popover">
+          <div class="fx-popover-header">
+            <span class="eyebrow" style="margin:0;">SLEEP TIMER</span>
+          </div>
+          <div class="sleep-quick-list">
+            <button class="sleep-quick-item" data-minutes="15">
+              <i class="ph-bold ph-timer"></i> <span>15 Minutes</span>
+            </button>
+            <button class="sleep-quick-item" data-minutes="30">
+              <i class="ph-bold ph-timer"></i> <span>30 Minutes</span>
+            </button>
+            <button class="sleep-quick-item" data-minutes="45">
+              <i class="ph-bold ph-timer"></i> <span>45 Minutes</span>
+            </button>
+            <button class="sleep-quick-item" data-minutes="60">
+              <i class="ph-bold ph-timer"></i> <span>60 Minutes</span>
+            </button>
+            <button class="sleep-quick-item sleep-cancel-item hidden" id="sleep-quick-cancel-btn">
+              <i class="ph-bold ph-x-circle" style="color:#ff6b5f;"></i> <span style="color:#ff6b5f;">Cancel Timer</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="ctrl-btn" id="connect-devices-bar-btn" title="Linus Connect (Devices & Remote Control)"><i class="ph ph-devices"></i></button>
+      <button class="ctrl-btn" id="queue-toggle" title="Queue"><i class="ph ph-list-dashes"></i></button>
+      <button class="ctrl-btn" id="fs-expand-btn" title="Expand Full Screen"><i class="ph ph-arrows-out"></i></button>
+
+      <!-- Expandable Volume Capsule -->
+      <div class="volume-capsule" id="volume-capsule">
+        <button class="vol-icon-btn" id="vol-mute-btn" title="Mute / Unmute">
+          <i class="ph ph-speaker-high" id="vol-icon"></i>
+        </button>
+        <div class="volume-slider-track">
+          <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+        </div>
+      </div>
+    </div>
+  </div>

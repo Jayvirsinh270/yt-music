@@ -1,0 +1,32 @@
+  <dialog id="lyrics-search-sheet" class="modal-sheet" style="max-width: 680px; width: 90vw;">
+    <div class="studio-modal-container">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow" style="margin:0;">UNIVERSAL LYRICS EXPLORER</p>
+          <h2 style="font-size:22px;margin:4px 0 0;">Search & Switch Lyrics</h2>
+        </div>
+        <button type="button" class="round-action" id="lyrics-search-close"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <p class="muted" id="lyrics-search-target" style="font-size: 13px; margin-bottom: 10px;">Target: <strong>-</strong></p>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="lyrics-search-input" placeholder="Search by song name, artist or movie..." style="flex:1; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size:14px;">
+          <button type="button" class="btn-primary" id="lyrics-search-submit-btn"><i class="ph ph-magnifying-glass"></i> Search</button>
+        </div>
+      </div>
+
+      <div id="lyrics-search-loading" class="hidden" style="text-align:center; padding: 24px 0; color: var(--accent);">
+        <i class="ph ph-spinner-gap spinning" style="font-size: 24px;"></i>
+        <p style="margin-top: 8px; font-size: 13px;">Searching LRCLIB & NetEase globally...</p>
+      </div>
+
+      <div id="lyrics-search-results" style="display:flex; flex-direction:column; gap:10px; max-height: 340px; overflow-y: auto; padding-right: 4px; margin-bottom: 16px;">
+        <p class="muted" style="text-align:center; padding: 20px 0;">Enter a song title or artist name to find synchronized and plain lyrics.</p>
+      </div>
+
+      <div class="dialog-actions" style="display:flex; justify-content:flex-end;">
+        <button type="button" class="btn-secondary" id="lyrics-search-cancel-btn">Close</button>
+      </div>
+    </div>
+  </dialog>

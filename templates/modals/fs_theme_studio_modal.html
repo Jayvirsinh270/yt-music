@@ -1,0 +1,372 @@
+  <dialog id="fs-theme-studio-sheet" class="modal-sheet theme-studio-modal">
+    <div class="studio-modal-container">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow" style="margin:0;">FULL SCREEN EXCLUSIVE</p>
+          <h2 style="font-size:24px;margin:4px 0 0;">Full Screen Atmosphere & Lyrics Studio</h2>
+        </div>
+        <button type="button" class="round-action" id="fs-theme-studio-close"><i class="ph ph-x"></i></button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="studio-tabs-row">
+        <button class="studio-tab-btn fs-studio-tab-btn active" data-fstab="wallpapers"><i class="ph-fill ph-film-strip"></i> Background & Live Video</button>
+        <button class="studio-tab-btn fs-studio-tab-btn" data-fstab="lyrics"><i class="ph-fill ph-quotes"></i> Lyrics & Karaoke Glow</button>
+        <button class="studio-tab-btn fs-studio-tab-btn" data-fstab="atmosphere"><i class="ph-fill ph-sliders"></i> Dim & Blur Tuning</button>
+      </div>
+
+      <!-- Tab 1: Fullscreen Wallpapers & Live Video -->
+      <div class="studio-tab-content fs-tab-content active" id="fs-tab-wallpapers">
+        <!-- Sub-Folder Navigation Pill Tabs for Fullscreen (Wallpapers First, Live Videos Second) -->
+        <div class="studio-subfolder-nav">
+          <button class="subfolder-pill-btn fs-subfolder-pill-btn active" data-fssubfolder="photos"><i class="ph-fill ph-image"></i> Wallpapers</button>
+          <button class="subfolder-pill-btn fs-subfolder-pill-btn" data-fssubfolder="videos"><i class="ph-fill ph-film-strip"></i> Live Videos</button>
+        </div>
+
+        <!-- FOLDER 1 (DEFAULT): Fullscreen Aesthetic Wallpapers with Top Showcase -->
+        <div class="subfolder-view fs-subfolder-view active" id="fs-subfolder-photos">
+          <div class="studio-section-title">
+            <span>⭐ Most Used & Popular Fullscreen Wallpapers</span>
+            <button type="button" class="btn-secondary btn-sm" id="fs-open-wallpaper-gallery-btn"><i class="ph-fill ph-squares-four"></i> See More (50+)</button>
+          </div>
+
+          <!-- Dynamic Fullscreen Front Page Top Shelf Grid -->
+          <div class="live-wallpaper-grid" id="fs-featured-wallpapers-grid">
+            <!-- Dynamically populated by renderFullscreenFeaturedWallpapersTray() -->
+          </div>
+
+          <!-- Large 'See More Wallpapers' Interactive Banner for Fullscreen -->
+          <div class="see-more-wallpaper-card" id="fs-see-more-banner-btn">
+            <div class="see-more-content">
+              <div class="see-more-icon"><i class="ph-fill ph-images"></i></div>
+              <div>
+                <strong>Explore Full 50+ Wallpaper Gallery</strong>
+                <span class="muted" style="font-size:12px;">Browse all 50+ categorized 4K artworks</span>
+              </div>
+            </div>
+            <span class="see-more-btn-action"><i class="ph-bold ph-arrow-right"></i> Open Gallery</span>
+          </div>
+        </div>
+
+        <!-- FOLDER 2: Fullscreen Live Video Loops -->
+        <div class="subfolder-view fs-subfolder-view hidden" id="fs-subfolder-videos">
+          <div class="studio-section-title">
+            <span>🎬 Fullscreen 4K Live Atmosphere Video Loops</span>
+          </div>
+
+          <div class="live-wallpaper-grid">
+            <div class="wallpaper-card fs-wallpaper-card active" data-fswp="match-main">
+              <div class="wallpaper-thumb-preview swatch-aura-live">
+                <i class="ph-fill ph-sparkle"></i>
+              </div>
+              <strong>Dynamic Aurora</strong>
+              <span>Album Art Audio Aura</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="lofi">
+              <div class="wallpaper-thumb-preview wp-lofi-thumb">
+                <i class="ph-fill ph-cloud-rain"></i>
+              </div>
+              <strong>Lo-Fi Rain</strong>
+              <span>4K Rain on Window Loop</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="fireplace">
+              <div class="wallpaper-thumb-preview wp-fire-thumb">
+                <i class="ph-fill ph-fire"></i>
+              </div>
+              <strong>Cozy Hearth</strong>
+              <span>Warm Campfire Video</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="cyber">
+              <div class="wallpaper-thumb-preview wp-cyber-thumb">
+                <i class="ph-fill ph-buildings"></i>
+              </div>
+              <strong>Neon City</strong>
+              <span>Synthwave Highway Loop</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="space">
+              <div class="wallpaper-thumb-preview wp-space-thumb">
+                <i class="ph-fill ph-planet"></i>
+              </div>
+              <strong>Starfield</strong>
+              <span>Deep Nebula Stars Video</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="ocean">
+              <div class="wallpaper-thumb-preview wp-ocean-thumb">
+                <i class="ph-fill ph-waves"></i>
+              </div>
+              <strong>Sunset Ocean</strong>
+              <span>Shoreline Coastal Tide</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="sunset_drive">
+              <div class="wallpaper-thumb-preview wp-drive-thumb">
+                <i class="ph-fill ph-car"></i>
+              </div>
+              <strong>Sunset Drive</strong>
+              <span>80s Synth Highway Cruise</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="tokyo_night">
+              <div class="wallpaper-thumb-preview wp-tokyo-thumb">
+                <i class="ph-fill ph-umbrella"></i>
+              </div>
+              <strong>Tokyo Rain</strong>
+              <span>Neon Alleyway Night</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="mountain_clouds">
+              <div class="wallpaper-thumb-preview wp-mountain-thumb">
+                <i class="ph-fill ph-mountains"></i>
+              </div>
+              <strong>Alpine Clouds</strong>
+              <span>Sunset Mountain Flow</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="aurora_borealis">
+              <div class="wallpaper-thumb-preview wp-aurora-thumb">
+                <i class="ph-fill ph-sun-horizon"></i>
+              </div>
+              <strong>Emerald Aurora</strong>
+              <span>Dancing Polar Night Sky</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="cozy_coffee">
+              <div class="wallpaper-thumb-preview wp-coffee-thumb">
+                <i class="ph-fill ph-coffee"></i>
+              </div>
+              <strong>Cafe Atmosphere</strong>
+              <span>Steaming Mug & Rainy Mood</span>
+            </div>
+
+            <div class="wallpaper-card fs-wallpaper-card" data-fswp="neon_tunnel">
+              <div class="wallpaper-thumb-preview wp-tunnel-thumb">
+                <i class="ph-fill ph-lightning"></i>
+              </div>
+              <strong>Cyber Warp Tunnel</strong>
+              <span>Hyper Light Speed Motion</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- OUTSIDE FOLDERS: Fullscreen Custom Upload Deck -->
+        <div class="studio-section-title" style="margin-top:20px;">
+          <span>📁 Import Custom Media for Fullscreen (Outside Folders)</span>
+        </div>
+
+        <div class="custom-media-import-deck">
+          <!-- Custom Photo Import Card -->
+          <div class="media-import-card">
+            <div class="import-card-header">
+              <div class="import-icon-box"><i class="ph-fill ph-image"></i></div>
+              <div>
+                <strong>Fullscreen Custom Photo</strong>
+                <span>Upload image file or paste image URL</span>
+              </div>
+            </div>
+            <div class="import-inputs-row">
+              <input type="file" id="fs-custom-wallpaper-file" accept="image/*" class="field-input">
+              <input type="url" id="fs-custom-wallpaper-url" placeholder="Or paste direct image URL (https://...)" class="field-input">
+            </div>
+          </div>
+
+          <!-- Custom Video Import Card -->
+          <div class="media-import-card">
+            <div class="import-card-header">
+              <div class="import-icon-box"><i class="ph-fill ph-video-camera"></i></div>
+              <div>
+                <strong>Fullscreen Live Video Loop</strong>
+                <span>Upload MP4 / WebM video or paste video URL</span>
+              </div>
+            </div>
+            <div class="import-inputs-row">
+              <input type="file" id="fs-custom-video-file" accept="video/mp4, video/webm" class="field-input">
+              <input type="url" id="fs-custom-video-url" placeholder="Or paste direct video URL (https://...mp4)" class="field-input">
+            </div>
+          </div>
+        </div>
+
+        <div id="fs-custom-media-box" class="custom-media-inputs-box hidden">
+          <div id="fs-custom-img-group" class="field-group hidden"></div>
+          <div id="fs-custom-vid-group" class="field-group hidden"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Fullscreen Lyrics Colors & Glow -->
+      <div class="studio-tab-content fs-tab-content hidden" id="fs-tab-lyrics">
+        <div class="studio-section-title">
+          <span>🎤 Full Screen Lyrics Color Tuning</span>
+          <button class="btn-secondary btn-sm" id="fs-reset-lyrics-colors-btn"><i class="ph ph-arrow-counter-clockwise"></i> Reset Lyrics</button>
+        </div>
+
+        <p class="muted" style="font-size:12px;margin:0 0 14px 0;">Customize active & inactive lyrics colors and glow so words stay crystal-clear over any wallpaper or live video.</p>
+
+        <div class="color-pickers-grid">
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Active Line Color</strong>
+              <span class="color-val" id="val-fs-lyrics-active">#ffffff</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-fs-lyrics-active" value="#ffffff">
+              <span>Color of the currently sung lyrics line</span>
+            </div>
+          </div>
+
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Active Line Glow</strong>
+              <span class="color-val" id="val-fs-lyrics-glow">#e5a95d</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-fs-lyrics-glow" value="#e5a95d">
+              <span>Neon radiance around sung lyrics</span>
+            </div>
+          </div>
+
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Upcoming Lines Color</strong>
+              <span class="color-val" id="val-fs-lyrics-inactive">#ffffff</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-fs-lyrics-inactive" value="#ffffff">
+              <span>Color for surrounding lyrics lines</span>
+            </div>
+          </div>
+
+          <div class="color-picker-card">
+            <div class="picker-label-row">
+              <strong>Lyrics Text Shadow</strong>
+              <span class="color-val" id="val-fs-lyrics-shadow">#000000</span>
+            </div>
+            <div class="picker-input-wrapper">
+              <input type="color" id="picker-fs-lyrics-shadow" value="#000000">
+              <span>Backdrop outline shadow for readability</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lyrics Background Capsule & Opacity -->
+        <div class="slider-controls-group" style="margin-top:16px;">
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Active Lyrics Capsule Tint Opacity</span>
+              <strong id="val-fs-lyrics-pill-opacity">15%</strong>
+            </div>
+            <input type="range" id="slider-fs-lyrics-pill-opacity" min="0" max="80" value="15">
+          </div>
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Lyrics Glow Radiance Strength</span>
+              <strong id="val-fs-lyrics-glow-strength">60%</strong>
+            </div>
+            <input type="range" id="slider-fs-lyrics-glow-strength" min="0" max="100" value="60">
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Fullscreen Dimming & Atmosphere Tuning -->
+      <div class="studio-tab-content fs-tab-content hidden" id="fs-tab-atmosphere">
+        <div class="studio-section-title">
+          <span>🌌 Full Screen Visual Atmosphere Tuning</span>
+        </div>
+
+        <div class="toggle-card" style="margin-bottom:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+          <div class="toggle-card-info">
+            <strong>🖥️ True Monitor Fullscreen (Hide Tabs & URL Bar)</strong>
+            <span>Removes browser window headers for 100% full screen & prevents image cropping</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button type="button" class="btn-secondary btn-sm" id="fs-native-toggle-btn" style="white-space:nowrap;"><i class="ph-bold ph-corners-out"></i> Toggle Now</button>
+            <label class="switch" title="Auto-enter true fullscreen when opening fullscreen player">
+              <input type="checkbox" id="check-fs-auto-native-fullscreen" checked>
+              <span class="slider-switch"></span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+          <button type="button" class="btn-secondary btn-sm" id="fs-pure-quality-btn" style="color:var(--accent,#e5a95d);border-color:rgba(229,169,93,0.3);"><i class="ph-fill ph-sparkle"></i> ✨ Pure 1:1 Passthrough (Raw Quality)</button>
+          <button type="button" class="btn-secondary btn-sm" id="fs-vivid-boost-btn" style="color:#38bdf8;border-color:rgba(56,189,248,0.3);"><i class="ph-fill ph-palette"></i> 🎨 Vivid Art Boost (Rich Contrast & Saturation)</button>
+        </div>
+
+        <div class="studio-section-title" style="margin-top:14px;font-size:12px;opacity:0.85;">
+          <span>🖼️ Wallpaper Framing & Alignment (Prevent Halo / Head Cutoff)</span>
+        </div>
+        <div class="fs-fit-btn-row" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <button type="button" class="btn-secondary btn-sm fs-fit-btn" data-fit="cover-top" id="fs-fit-cover-top"><i class="ph-bold ph-arrow-up"></i> Top Focus (Keeps Halo & Head)</button>
+          <button type="button" class="btn-secondary btn-sm fs-fit-btn" data-fit="cover-center" id="fs-fit-cover-center"><i class="ph-bold ph-arrows-out-cardinal"></i> Center Focus</button>
+          <button type="button" class="btn-secondary btn-sm fs-fit-btn" data-fit="contain" id="fs-fit-contain"><i class="ph-bold ph-corners-in"></i> Fit Full Artwork (No Crop + Ambient Blur)</button>
+        </div>
+
+        <div class="slider-controls-group">
+          <div class="slider-row" id="fs-custom-pos-row">
+            <div class="slider-header">
+              <span>Vertical Framing / Camera Pan</span>
+              <strong id="val-fs-wallpaper-pos">Top (15%)</strong>
+            </div>
+            <input type="range" id="slider-fs-wallpaper-pos" min="0" max="100" value="15">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Color Contrast & Dynamic Range</span>
+              <strong id="val-fs-wallpaper-contrast">100%</strong>
+            </div>
+            <input type="range" id="slider-fs-wallpaper-contrast" min="70" max="140" value="100">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Wallpaper Vibrancy & Saturation</span>
+              <strong id="val-fs-wallpaper-saturation">100%</strong>
+            </div>
+            <input type="range" id="slider-fs-wallpaper-saturation" min="70" max="150" value="100">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Wallpaper Brightness Exposure</span>
+              <strong id="val-fs-wallpaper-brightness">100%</strong>
+            </div>
+            <input type="range" id="slider-fs-wallpaper-brightness" min="70" max="130" value="100">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Corner Vignette & Edge Darkness</span>
+              <strong id="val-fs-wallpaper-vignette">0%</strong>
+            </div>
+            <input type="range" id="slider-fs-wallpaper-vignette" min="0" max="100" value="0">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Full Screen Wallpaper Dimmer</span>
+              <strong id="val-fs-wallpaper-dim">0%</strong>
+            </div>
+            <input type="range" id="slider-fs-wallpaper-dim" min="0" max="90" value="0">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Full Screen Background Blur Depth</span>
+              <strong id="val-fs-wallpaper-blur">0px</strong>
+            </div>
+            <input type="range" id="slider-fs-wallpaper-blur" min="0" max="40" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-actions" style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
+        <button type="button" class="btn-secondary" id="fs-studio-reset-all-btn"><i class="ph ph-arrow-counter-clockwise"></i> Reset Full Screen Defaults</button>
+        <button type="button" class="btn-primary" id="fs-studio-done-btn"><i class="ph-fill ph-check-circle"></i> Apply & Done</button>
+      </div>
+    </div>
+  </dialog>
+

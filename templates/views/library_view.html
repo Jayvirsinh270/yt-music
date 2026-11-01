@@ -1,0 +1,587 @@
+      <div id="library-view" class="view">
+        
+
+        <!-- =====================================================
+             Top Header: Greeting & Listening Streak
+        ===================================================== -->
+        <div class="dashboard-hero-header">
+          <div class="dashboard-hero-title-group">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <h1 id="rec-greeting" class="rec-greeting">Good Evening</h1>
+              <span class="rec-streak-badge" id="rec-streak-badge" title="Active Listening Streak (Click to view calendar heatmap)" role="button" tabindex="0">
+                <i class="ph-fill ph-fire streak-fire-icon"></i>
+                <span id="streak-days-val">1</span> Day Streak
+              </span>
+            </div>
+            <p id="rec-greeting-sub" class="rec-greeting-sub">Your personal sanctuary · Curated listening</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="rewind-launch-btn" id="open-weekly-rewind-btn" title="View your Weekly Sound Rewind & Musical Persona">
+              <i class="ph-bold ph-calendar-star"></i>
+              <span>Weekly Rewind</span>
+            </button>
+            <button class="rec-refresh-btn" id="rec-refresh-btn" title="Refresh recommendations">
+              <i class="ph ph-arrows-clockwise"></i>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             Interactive Circadian Mood Filter Chips Bar
+        ===================================================== -->
+        <div class="mood-chips-bar" id="mood-chips-bar">
+          <button class="mood-chip active" data-mood="all"><i class="ph-fill ph-sparkle"></i> All</button>
+          <button class="mood-chip" data-mood="chill"><i class="ph-fill ph-coffee"></i> Chill & Lo-Fi</button>
+          <button class="mood-chip" data-mood="energy"><i class="ph-fill ph-lightning"></i> High Energy</button>
+          <button class="mood-chip" data-mood="focus"><i class="ph-fill ph-brain"></i> Focus & Flow</button>
+          <button class="mood-chip" data-mood="night"><i class="ph-fill ph-moon-stars"></i> Late Night</button>
+          <button class="mood-chip" data-mood="discovery"><i class="ph-fill ph-compass"></i> Discovery</button>
+        </div>
+
+        <!-- =====================================================
+             6-Card Quick Launchpad (Instant 1-Click Dopamine Grid)
+        ===================================================== -->
+        <div class="rec-quick-grid" id="rec-quick-grid">
+          <!-- Dynamically populated by JS (Daily Mix 1, Liked Songs, Artist Radio, Continue, Mood, Most Played) -->
+        </div>
+
+        <!-- =====================================================
+             Hero Deck: Left (Now Playing) + Right (Up Next Queue)
+        ===================================================== -->
+        <div class="hero-deck" id="hero-deck">
+          <!-- Left Column: Now Playing Card with Waveform & Controls -->
+          <div id="hero-now-playing-card" class="hero-np-card">
+            <div class="hero-np-art-wrap" id="vinyl-record">
+              <div class="hero-np-art" id="album-art-box">
+                <i class="ph-fill ph-music-notes-simple"></i>
+              </div>
+            </div>
+
+            <div class="hero-np-body">
+              <div class="hero-np-head">
+                <div class="hero-np-text-group">
+                  <h2 class="hero-np-title" id="hero-title">Silence<br><em>is golden.</em></h2>
+                  <p class="hero-np-artist" id="hero-artist">Awaiting your selection.</p>
+                </div>
+                <span class="hero-np-meta" id="hero-format">Local Audio</span>
+              </div>
+
+              <!-- Golden Animated Audio Waveform Visualizer -->
+              <div class="hero-np-waveform-wrap">
+                <canvas id="hero-waveform-canvas" class="hero-waveform-canvas" width="500" height="42"></canvas>
+              </div>
+
+              <!-- Sleek Playback Controls Row -->
+              <div class="hero-np-controls">
+                <div class="hero-np-main-playback">
+                  <button class="hero-np-ctrl-btn" id="hero-prev" title="Previous Track">
+                    <i class="ph-fill ph-skip-back"></i>
+                  </button>
+                  <button class="hero-np-play-btn" id="hero-play" title="Play / Pause">
+                    <i class="ph-fill ph-play"></i>
+                  </button>
+                  <button class="hero-np-ctrl-btn" id="hero-next" title="Next Track">
+                    <i class="ph-fill ph-skip-forward"></i>
+                  </button>
+                </div>
+                <div class="hero-np-extra-btns">
+                  <button class="hero-np-sub-btn" id="hero-fav-btn" title="Favorite">
+                    <i class="ph ph-star"></i>
+                  </button>
+                  <button class="hero-np-sub-btn" id="hero-lyrics" title="Lyrics">
+                    <i class="ph ph-quotes"></i>
+                  </button>
+                  <button class="hero-np-sub-btn" id="hero-add-playlist" title="Add to Playlist">
+                    <i class="ph ph-plus-circle"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Up Next Mini Queue Widget & 2D Vibe Compass -->
+          <div class="hero-up-next-card" id="hero-up-next-card">
+            <div class="hero-up-next-header">
+              <div class="hero-deck-tabs">
+                <button class="hero-deck-tab-btn active" id="tab-up-next-queue" title="View Upcoming Queue">
+                  <i class="ph-fill ph-queue"></i>
+                  <span>Up Next</span>
+                </button>
+                <button class="hero-deck-tab-btn" id="tab-up-next-vibe" title="2D Vibe Compass & Mood Dial">
+                  <i class="ph-bold ph-compass"></i>
+                  <span>Vibe Compass</span>
+                </button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button class="up-next-view-all" id="hero-save-queue-btn" title="Save Queue as Playlist" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 8px;border-radius:6px;">
+                  <i class="ph-bold ph-bookmark-simple"></i>
+                  <span>Save</span>
+                </button>
+                <button class="up-next-view-all" id="hero-open-queue" title="Open Full Queue">
+                  <i class="ph ph-list-dashes"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- View 1: Standard Up Next List -->
+            <div class="hero-up-next-list" id="hero-up-next-list">
+              <!-- Dynamically populated by JS (next 3 songs) -->
+              <div class="up-next-empty">
+                <i class="ph ph-music-note"></i>
+                <span>Queue is empty</span>
+              </div>
+            </div>
+
+            <!-- View 2: 2D Vibe Compass / Mood Dial Pad -->
+            <div class="hero-vibe-compass-view hidden" id="hero-vibe-compass-view">
+              <!-- Active Vibe Badge & Readout -->
+              <div class="vibe-compass-status">
+                <div class="vibe-compass-badge" id="vibe-compass-badge">
+                  <i class="ph-fill ph-sun" id="vibe-compass-icon"></i>
+                  <span id="vibe-compass-title">Sunburst &amp; Euphoric</span>
+                </div>
+                <div class="vibe-coords-readout" id="vibe-coords-readout">
+                  <span id="vibe-coord-x">V: +0.00</span>
+                  <span id="vibe-coord-y">E: +0.00</span>
+                </div>
+              </div>
+
+              <!-- 2D Interactive Radar Compass Pad -->
+              <div class="vibe-radar-pad-wrap">
+                <div class="vibe-radar-pad" id="vibe-radar-pad" role="slider" aria-label="2D Vibe Compass Mood Pad" tabindex="0">
+                  <!-- Axis Crosshairs -->
+                  <div class="vibe-axis-x"></div>
+                  <div class="vibe-axis-y"></div>
+                  <div class="vibe-radar-rings"></div>
+
+                  <!-- Quadrant Labels -->
+                  <span class="vibe-quad-label q-top">⚡ ENERGETIC</span>
+                  <span class="vibe-quad-label q-bottom">☕ CHILL</span>
+                  <span class="vibe-quad-label q-left">🌧️ MELANCHOLIC</span>
+                  <span class="vibe-quad-label q-right">☀️ JOYFUL</span>
+
+                  <!-- Draggable Glowing Puck -->
+                  <div class="vibe-puck" id="vibe-puck" style="left:50%; top:50%;">
+                    <div class="vibe-puck-core"></div>
+                    <div class="vibe-puck-aura" id="vibe-puck-aura"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Presets Bar -->
+              <div class="vibe-presets-bar">
+                <button class="vibe-preset-chip active" data-x="0.0" data-y="0.0" title="Balanced Center">🎯 Balanced</button>
+                <button class="vibe-preset-chip" data-x="-0.5" data-y="-0.6" title="Lo-Fi Cozy Chill">☕ Lo-Fi</button>
+                <button class="vibe-preset-chip" data-x="-0.4" data-y="0.8" title="High Voltage Rage">⚡ Voltage</button>
+                <button class="vibe-preset-chip" data-x="0.7" data-y="0.7" title="Sunburst Euphoric Pop">☀️ Sunburst</button>
+                <button class="vibe-preset-chip" data-x="-0.7" data-y="-0.7" title="Midnight Somber Rain">🌙 Midnight</button>
+                <button class="vibe-preset-chip" data-x="0.6" data-y="-0.6" title="Zen Serene Harmony">🌿 Zen</button>
+              </div>
+
+              <!-- Action Controls -->
+              <div class="vibe-actions-row">
+                <button class="vibe-action-btn btn-secondary" id="vibe-morph-queue-btn" title="Reorder upcoming queue by this mood">
+                  <i class="ph-bold ph-arrows-down-up"></i>
+                  <span>Morph Queue</span>
+                </button>
+                <button class="vibe-action-btn btn-primary" id="vibe-instant-mix-btn" title="Play 15-track curated mix for this mood">
+                  <i class="ph-fill ph-play"></i>
+                  <span>Play Vibe Mix</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             Recommendation Dashboard Shelves (Spotify / YouTube style)
+        ============================================================ -->
+        <div id="rec-dashboard" class="rec-dashboard">
+
+          <!-- Shelf: Daily Mix Capsules -->
+          <div class="rec-shelf" id="shelf-capsules" style="display:none" data-moods="all,chill,energy,focus,night">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-sparkle rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Made For You: Daily Mix Capsules</h3>
+                  <p class="rec-shelf-sub">Curated soundscapes tailored to every mood</p>
+                </div>
+              </div>
+            </div>
+            <div class="rec-capsules-grid" id="cards-capsules"></div>
+          </div>
+
+          <!-- Shelf: Sonic DNA & Listening Identity -->
+          <div class="rec-shelf" id="shelf-sonic-dna" style="display:none" data-moods="all,focus,night">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-fingerprint rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Your Sonic Identity</h3>
+                  <p class="rec-shelf-sub">Your personal taste profile and listening DNA</p>
+                </div>
+              </div>
+            </div>
+            <div class="sonic-dna-card" id="sonic-dna-card"></div>
+          </div>
+
+          <!-- Shelf: Daily Listening Streak & Music Calendar Heatmap -->
+          <div class="rec-shelf" id="shelf-streak-heatmap" style="display:none" data-moods="all,focus,chill,energy,night,discovery">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-fire rec-shelf-icon streak-header-fire"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Daily Listening Streak &amp; Activity</h3>
+                  <p class="rec-shelf-sub">Track your daily music habits and keep your sonic flame alive</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="streak-header-pill" id="streak-header-pill">
+                  <i class="ph-fill ph-fire"></i>
+                  <span id="streak-header-pill-text">Checking streak...</span>
+                </span>
+              </div>
+            </div>
+            <div class="streak-heatmap-card" id="streak-heatmap-card">
+              <!-- Dynamically populated by renderStreakHeatmap() in app.js -->
+            </div>
+          </div>
+
+
+          <!-- Shelf: Continue Listening -->
+          <div class="rec-shelf" id="shelf-continue" style="display:none" data-moods="all,focus,night">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-play-circle rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Continue Listening</h3>
+                  <p class="rec-shelf-sub">Pick up where you left off</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-continue" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-continue" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-continue"></div>
+          </div>
+
+          <!-- Shelf: For You: Top Picks -->
+          <div class="rec-shelf" id="shelf-for_you" style="display:none" data-moods="all,chill,discovery">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-sparkle rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">For You: Top Picks</h3>
+                  <p class="rec-shelf-sub">Curated from your listening habits</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-for_you" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-for_you" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-for_you"></div>
+          </div>
+
+          <!-- Shelf: Because You Listened (YouTube) -->
+          <div class="rec-shelf" id="shelf-because" style="display:none" data-moods="all,discovery,chill">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-music-note rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title" id="shelf-because-title">Because You Listened to...</h3>
+                  <p class="rec-shelf-sub">Songs inspired by your taste</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge yt-badge"><i class="ph-fill ph-youtube-logo"></i> YouTube</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-because" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-because" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-because"></div>
+          </div>
+
+          <!-- Shelf: Your Most Played -->
+          <div class="rec-shelf" id="shelf-top_played" style="display:none" data-moods="all,energy,focus">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-chart-line-up rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Your Most Played</h3>
+                  <p class="rec-shelf-sub">Your personal hall of fame</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-top_played" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-top_played" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-top_played"></div>
+          </div>
+
+          <!-- Shelf: Favorites Mix -->
+          <div class="rec-shelf" id="shelf-favorites" style="display:none" data-moods="all,chill,night">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-star rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Favorites Mix</h3>
+                  <p class="rec-shelf-sub">Songs you've loved over time</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-favorites" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-favorites" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-favorites"></div>
+          </div>
+
+          <!-- Shelf: Mood Radio (YouTube) -->
+          <div class="rec-shelf" id="shelf-mood" style="display:none" data-moods="all,night,chill,focus">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-sun-horizon rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title" id="shelf-mood-title">Mood Radio</h3>
+                  <p class="rec-shelf-sub">Curated for right now</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge yt-badge"><i class="ph-fill ph-youtube-logo"></i> YouTube</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-mood" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-mood" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-mood"></div>
+          </div>
+
+          <!-- Shelf: Recently Added -->
+          <div class="rec-shelf" id="shelf-recent_added" style="display:none" data-moods="all,discovery">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-plus-circle rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Recently Added</h3>
+                  <p class="rec-shelf-sub">Fresh to your collection</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-recent_added" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-recent_added" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-recent_added"></div>
+          </div>
+
+          <!-- Shelf: Trending Now (YouTube) -->
+          <div class="rec-shelf" id="shelf-trending" style="display:none" data-moods="all,discovery,energy">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-fire rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Trending Now</h3>
+                  <p class="rec-shelf-sub">What the world is listening to</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge yt-badge"><i class="ph-fill ph-youtube-logo"></i> YouTube</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-trending" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-trending" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-trending"></div>
+          </div>
+
+          <!-- Shelf: Your Top This Week -->
+          <div class="rec-shelf" id="shelf-this_week" style="display:none" data-moods="all,energy,focus">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-calendar-check rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Your Top This Week</h3>
+                  <p class="rec-shelf-sub">Most played in the last 7 days</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-this_week" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-this_week" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-this_week"></div>
+          </div>
+
+          <!-- Shelf: Hidden Gems -->
+          <div class="rec-shelf" id="shelf-hidden_gems" style="display:none" data-moods="all,chill,discovery">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-diamond rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Hidden Gems</h3>
+                  <p class="rec-shelf-sub">Loved once: ready to rediscover</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-hidden_gems" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-hidden_gems" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-hidden_gems"></div>
+          </div>
+
+          <!-- Shelf: Skip-Free Zone -->
+          <div class="rec-shelf" id="shelf-skip_free" style="display:none" data-moods="all,chill,focus,night">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-shield-check rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title">Skip-Free Zone</h3>
+                  <p class="rec-shelf-sub">Songs you never skip: ever</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-skip_free" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-skip_free" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-skip_free"></div>
+          </div>
+
+          <!-- Shelf: Rediscover (YouTube) -->
+          <div class="rec-shelf" id="shelf-rediscover" style="display:none" data-moods="all,chill,night,discovery">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-clock-clockwise rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title" id="shelf-rediscover-title">Rediscover</h3>
+                  <p class="rec-shelf-sub">Nostalgic hits & classics you haven't heard in a while</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge yt-badge"><i class="ph-fill ph-youtube-logo"></i> YouTube</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-rediscover" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-rediscover" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-rediscover"></div>
+          </div>
+
+          <!-- Shelf: Because You Played (Markov) -->
+          <div class="rec-shelf" id="shelf-markov_next" style="display:none" data-moods="all,discovery,focus">
+            <div class="rec-shelf-header">
+              <div class="rec-shelf-title-group">
+                <i class="ph-fill ph-graph rec-shelf-icon"></i>
+                <div>
+                  <h3 class="rec-shelf-title" id="shelf-markov-title">Because You Played...</h3>
+                  <p class="rec-shelf-sub">Tracks that naturally follow your last listen</p>
+                </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <span class="rec-source-badge local-badge">Local</span>
+                <div class="rec-shelf-nav-arrows">
+                  <button class="rec-shelf-arrow" data-target="cards-markov_next" data-dir="-1" title="Scroll left"><i class="ph ph-caret-left"></i></button>
+                  <button class="rec-shelf-arrow" data-target="cards-markov_next" data-dir="1" title="Scroll right"><i class="ph ph-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="rec-shelf-scroll" id="cards-markov_next"></div>
+          </div>
+
+          <!-- Skeleton state (shown while loading) -->
+          <div id="rec-skeleton" class="rec-skeleton-wrapper">
+            <div class="rec-skeleton-shelf">
+              <div class="rec-skeleton-title-row">
+                <div class="rec-skeleton-line w-40"></div>
+                <div class="rec-skeleton-line w-20"></div>
+              </div>
+              <div class="rec-skeleton-cards">
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+              </div>
+            </div>
+            <div class="rec-skeleton-shelf">
+              <div class="rec-skeleton-title-row">
+                <div class="rec-skeleton-line w-40"></div>
+                <div class="rec-skeleton-line w-20"></div>
+              </div>
+              <div class="rec-skeleton-cards">
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+                <div class="rec-skeleton-card"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state (shown when no data and not loading) -->
+          <div id="rec-empty" class="rec-empty-state" style="display:none">
+            <i class="ph ph-music-notes rec-empty-icon"></i>
+            <p>Play some songs to get personalized recommendations!</p>
+            <p class="rec-empty-sub">Your taste profile builds as you listen.</p>
+          </div>
+
+        </div>
+
+
+        <!-- Local Music Quick Access Bar -->
+        <div class="section-heading" style="margin-top:32px;">
+          <div>
+            <p class="eyebrow">SAVED MEDIA</p>
+            <h2 id="view-title">Downloaded & Local Collection</h2>
+            <p class="muted" id="library-status">Loading tracks...</p>
+          </div>
+          <div class="heading-actions">
+            <button class="btn-secondary" id="rescan"><i class="ph ph-arrows-clockwise"></i> Rescan</button>
+          </div>
+        </div>
+        
+        <div class="category-bar" id="category-bar"></div>
+        <div class="track-table" id="track-list"></div>
+        
+        <div class="empty-state hidden" id="empty-state">
+          <i class="ph ph-music-notes-plus empty-icon"></i>
+          <h3>Quiet in here.</h3>
+          <p>Import a folder or download media to start your collection.</p>
+          <button class="btn-primary" id="empty-import"><i class="ph ph-folder-plus"></i> Import folder</button>
+        </div>
+      </div>

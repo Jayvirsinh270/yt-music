@@ -1,10 +1,17 @@
 import os
 import sys
 import threading
+from pathlib import Path
 import pytest
+
+# Ensure repository root is on sys.path for test discovery on all OS/CI runners
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 # ---------------------------------------------------------------------------
 # Import the REAL db_store eagerly at conftest load time.
+
 # This must happen before test_downloader.py or test_smart_playlists.py can
 # insert their stubs, because conftest is loaded first by pytest.
 # We stash the real module so the autouse fixture can patch it reliably.

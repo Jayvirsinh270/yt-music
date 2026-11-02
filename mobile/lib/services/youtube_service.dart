@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yte;
 import '../models/track.dart';
@@ -17,10 +19,11 @@ class YouTubeService {
   static const String _prefKeyHost = 'linus_server_host';
   String _serverHost = '';
 
-  // In-memory instant stream cache (avoids repeated network calls)
+  // In-memory stream cache (avoids repeated resolution)
   static final Map<String, _CachedStream> _streamCache = {};
 
-  final yte.YoutubeExplode _ytExplode = yte.YoutubeExplode();
+  // youtube_explode_dart instance — handles cipher decoding natively
+  yte.YoutubeExplode _ytExplode = yte.YoutubeExplode();
 
   String get serverHost => _serverHost;
 
@@ -30,7 +33,21 @@ class YouTubeService {
   }
 
   void dispose() {
-    _ytExplode.close();
+    try {
+      _ytExplode.close();
+    } catch (_) {}
+  }
+
+  void _ensureYtExplode() {
+    // If closed or null, re-initialize
+    try {
+      // simple access test
+      if (_ytExplode.videos.isClosed) {
+        _ytExplode = yte.YoutubeExplode();
+      }
+    } catch (_) {
+      _ytExplode = yte.YoutubeExplode();
+    }
   }
 
   Future<void> setServerHost(String host) async {
@@ -39,15 +56,14 @@ class YouTubeService {
     await prefs.setString(_prefKeyHost, _serverHost);
   }
 
-  /// Multi-tier resilient YouTube search:
-  /// 1. Direct YouTube Innertube Web API (fastest, full catalog)
-  /// 2. Piped / Invidious fallback APIs
-  /// 3. Linus PC server proxy fallback (if configured)
+  // ── Search ─────────────────────────────────────────────────────────────────
+
+  /// Multi-tier resilient YouTube search
   Future<List<Track>> search(String query, {int limit = 25}) async {
     final q = query.trim();
     if (q.isEmpty) return [];
 
-    // 1. Try Direct YouTube Innertube Search (fastest, standalone, works everywhere)
+    // 1. Direct Innertube Web API (fastest, standalone, works globally)
     try {
       final results = await _searchInnertube(q, limit: limit);
       if (results.isNotEmpty) return results;
@@ -55,7 +71,34 @@ class YouTubeService {
       debugPrint('[YouTubeService] Innertube search error: $e');
     }
 
-    // 2. Try Public Piped Search API
+    // 2. Direct youtube_explode_dart search fallback
+    try {
+      _ensureYtExplode();
+      final ytResults = await _ytExplode.search.search(q).timeout(const Duration(seconds: 8));
+      if (ytResults.isNotEmpty) {
+        final list = <Track>[];
+        for (final item in ytResults.take(limit)) {
+          final vidId = item.id.value;
+          list.add(Track(
+            id: 'yt:$vidId',
+            title: item.title,
+            artist: item.author,
+            album: 'YouTube Music',
+            duration: item.duration ?? Duration.zero,
+            filePath: '',
+            thumbnailUrl: item.thumbnails.highResUrl.isNotEmpty
+                ? item.thumbnails.highResUrl
+                : 'https://i.ytimg.com/vi/$vidId/hqdefault.jpg',
+            source: TrackSource.youtube,
+          ));
+        }
+        if (list.isNotEmpty) return list;
+      }
+    } catch (e) {
+      debugPrint('[YouTubeService] youtube_explode search error: $e');
+    }
+
+    // 3. Piped public API
     try {
       final results = await _searchPiped(q);
       if (results.isNotEmpty) return results;
@@ -63,7 +106,7 @@ class YouTubeService {
       debugPrint('[YouTubeService] Piped search error: $e');
     }
 
-    // 3. Try Invidious Search API
+    // 4. Invidious public API
     try {
       final results = await _searchInvidious(q);
       if (results.isNotEmpty) return results;
@@ -71,13 +114,12 @@ class YouTubeService {
       debugPrint('[YouTubeService] Invidious search error: $e');
     }
 
-    // 4. Try local Linus PC server proxy (if user configured their PC's IP)
+    // 5. PC server fallback (if user configured)
     if (_serverHost.isNotEmpty) {
       try {
-        final uri = Uri.parse('$_serverHost/api/youtube/search').replace(queryParameters: {
-          'q': q,
-          'limit': limit.toString(),
-        });
+        final uri = Uri.parse('$_serverHost/api/youtube/search').replace(
+          queryParameters: {'q': q, 'limit': limit.toString()},
+        );
         final res = await http.get(uri).timeout(const Duration(seconds: 5));
         if (res.statusCode == 200) {
           final data = json.decode(res.body);
@@ -99,14 +141,13 @@ class YouTubeService {
           }).toList();
         }
       } catch (e) {
-        debugPrint('[YouTubeService] PC server search fallback error: $e');
+        debugPrint('[YouTubeService] PC server search error: $e');
       }
     }
 
     return [];
   }
 
-  /// Direct YouTube Innertube search implementation
   Future<List<Track>> _searchInnertube(String query, {int limit = 25}) async {
     final url = Uri.parse('https://www.youtube.com/youtubei/v1/search');
     final payload = {
@@ -129,16 +170,16 @@ class YouTubeService {
 
     final response = await http
         .post(url, headers: headers, body: json.encode(payload))
-        .timeout(const Duration(seconds: 6));
+        .timeout(const Duration(seconds: 8));
 
     if (response.statusCode != 200) return [];
 
     final data = json.decode(response.body);
     final results = <Track>[];
 
-    final contents = data['contents']?['twoColumnSearchResultsRenderer']?['primaryContents']
-            ?['sectionListRenderer']?['contents'] as List<dynamic>? ??
-        [];
+    final contents = data['contents']?['twoColumnSearchResultsRenderer']
+            ?['primaryContents']?['sectionListRenderer']?['contents']
+        as List<dynamic>? ?? [];
 
     for (final section in contents) {
       final items = section['itemSectionRenderer']?['contents'] as List<dynamic>? ?? [];
@@ -149,15 +190,12 @@ class YouTubeService {
         final vidId = v['videoId'] as String?;
         if (vidId == null || vidId.isEmpty) continue;
 
-        // Title
         final titleRuns = v['title']?['runs'] as List<dynamic>? ?? [];
         final title = titleRuns.map((r) => r['text'] ?? '').join().trim();
 
-        // Artist / Channel
         final ownerRuns = v['ownerText']?['runs'] as List<dynamic>? ?? [];
         final artist = ownerRuns.map((r) => r['text'] ?? '').join().trim();
 
-        // Duration
         final durStr = v['lengthText']?['simpleText'] as String? ?? '';
         int sec = 0;
         if (durStr.isNotEmpty) {
@@ -171,7 +209,6 @@ class YouTubeService {
           }
         }
 
-        // Thumbnail
         final thumbs = v['thumbnail']?['thumbnails'] as List<dynamic>? ?? [];
         final thumb = thumbs.isNotEmpty
             ? thumbs.last['url'] as String? ?? 'https://i.ytimg.com/vi/$vidId/hqdefault.jpg'
@@ -196,11 +233,10 @@ class YouTubeService {
     return results;
   }
 
-  /// Piped Public API search fallback
   Future<List<Track>> _searchPiped(String query) async {
     final instances = [
-      'https://pipedapi.kavin.rocks',
-      'https://api.piped.privacydev.net',
+      'https://piped-api.garudalinux.org',
+      'https://api.piped.private.coffee',
       'https://pipedapi.leptons.xyz',
     ];
 
@@ -219,7 +255,6 @@ class YouTubeService {
             final url = it['url'] as String? ?? '';
             final vidId = url.replaceFirst('/watch?v=', '');
             if (vidId.isEmpty) continue;
-
             tracks.add(Track(
               id: 'yt:$vidId',
               title: it['title'] as String? ?? 'Song',
@@ -240,11 +275,12 @@ class YouTubeService {
     return [];
   }
 
-  /// Invidious API search fallback
   Future<List<Track>> _searchInvidious(String query) async {
     final instances = [
-      'https://invidious.nerdvpn.de',
-      'https://inv.nadeko.net',
+      'https://inv.tux.pizza',
+      'https://invidious.projectsegfau.lt',
+      'https://yewtu.be',
+      'https://yt.artemislena.eu',
     ];
 
     for (final host in instances) {
@@ -260,7 +296,6 @@ class YouTubeService {
           for (final it in items) {
             final vidId = it['videoId'] as String? ?? '';
             if (vidId.isEmpty) continue;
-
             tracks.add(Track(
               id: 'yt:$vidId',
               title: it['title'] as String? ?? 'Song',
@@ -281,72 +316,166 @@ class YouTubeService {
     return [];
   }
 
-  /// High-reliability stream resolution:
-  /// 1. Instant Cache Check (0ms)
-  /// 2. Direct Official YouTube Stream via youtube_explode_dart (pure Dart, cipher deciphered, highest bitrate AAC/Opus)
-  /// 3. Parallel Fast Public Mirrors Racing (Piped & Invidious)
-  /// 4. PC Server proxy fallback if configured
+  // ── Stream Resolution ──────────────────────────────────────────────────────
+
+  /// Resolves a playable audio stream URL for the given video ID.
+  /// 5-Stage Resilient Resolution Pipeline:
+  ///   Stage 1: In-memory cache hit (0 ms)
+  ///   Stage 2: Direct YouTube Android Innertube API (<300 ms, unciphered direct stream URL)
+  ///   Stage 3: youtube_explode_dart (pure Dart, decodes cipher / n-parameter)
+  ///   Stage 4: Multi-instance public mirror racing (Invidious / Piped)
+  ///   Stage 5: PC Server proxy (if configured)
   Future<String?> resolveStreamUrl(String videoId) async {
     final cleanId = videoId.replaceFirst('yt:', '').trim();
     if (cleanId.isEmpty) return null;
 
-    // 1. Instant Cache Check (0 ms)
+    // Stage 1: In-memory cache hit
     final cached = _streamCache[cleanId];
     if (cached != null && cached.isValid) {
+      debugPrint('[YouTubeService] Cache hit for $cleanId');
       return cached.url;
     }
 
-    // 2. Direct Official Stream via youtube_explode_dart (pure Dart, cipher deciphered, no proxies)
+    // Stage 2: Direct YouTube Android Innertube API (direct unciphered googlevideo stream URL)
     try {
-      final manifest = await _ytExplode.videos.streamsClient.getManifest(cleanId).timeout(const Duration(seconds: 5));
-      final audioStreams = manifest.audioOnly;
-      if (audioStreams.isNotEmpty) {
-        final audioStream = audioStreams.withHighestBitrate();
-        final streamUrl = audioStream.url.toString();
+      final androidStream = await _resolveInnertubeAndroid(cleanId);
+      if (androidStream != null && androidStream.isNotEmpty) {
+        _cacheStreamUrl(cleanId, androidStream, ttlMinutes: 55);
+        return androidStream;
+      }
+    } catch (e) {
+      debugPrint('[YouTubeService] Stage 2 Innertube Android error: $e');
+    }
+
+    // Stage 3: youtube_explode_dart (handles cipher decoding natively)
+    try {
+      _ensureYtExplode();
+      debugPrint('[YouTubeService] Stage 3: Trying youtube_explode_dart for $cleanId');
+      final manifest = await _ytExplode.videos.streamsClient
+          .getManifest(cleanId)
+          .timeout(const Duration(seconds: 15));
+
+      // Prefer audio-only streams (highest bitrate AAC/Opus)
+      final audioOnly = manifest.audioOnly;
+      if (audioOnly.isNotEmpty) {
+        final sorted = audioOnly.toList()
+          ..sort((a, b) => b.bitrate.bitsPerSecond.compareTo(a.bitrate.bitsPerSecond));
+        final streamUrl = sorted.first.url.toString();
         if (streamUrl.isNotEmpty) {
-          _cacheStreamUrl(cleanId, streamUrl);
+          debugPrint('[YouTubeService] youtube_explode_dart audio stream resolved');
+          _cacheStreamUrl(cleanId, streamUrl, ttlMinutes: 55);
           return streamUrl;
         }
       }
-      final muxedStreams = manifest.muxed;
-      if (muxedStreams.isNotEmpty) {
-        final muxedStream = muxedStreams.withHighestBitrate();
-        final streamUrl = muxedStream.url.toString();
+
+      // Muxed stream fallback
+      final muxed = manifest.muxed;
+      if (muxed.isNotEmpty) {
+        final sorted = muxed.toList()
+          ..sort((a, b) => b.bitrate.bitsPerSecond.compareTo(a.bitrate.bitsPerSecond));
+        final streamUrl = sorted.first.url.toString();
         if (streamUrl.isNotEmpty) {
-          _cacheStreamUrl(cleanId, streamUrl);
+          _cacheStreamUrl(cleanId, streamUrl, ttlMinutes: 55);
           return streamUrl;
         }
       }
     } catch (e) {
-      debugPrint('[YouTubeService] YoutubeExplode stream error: $e');
+      debugPrint('[YouTubeService] Stage 3 youtube_explode error: $e');
     }
 
-    // 3. Fallback: Fast Public Mirror Racing
+    // Stage 4: Multi-instance public mirror racing
     try {
-      final mirrorStream = await _raceFastStreamInstances(cleanId);
-      if (mirrorStream != null && mirrorStream.isNotEmpty) {
-        _cacheStreamUrl(cleanId, mirrorStream);
-        return mirrorStream;
+      debugPrint('[YouTubeService] Stage 4: Trying public mirrors for $cleanId');
+      final mirrorUrl = await _raceMirrors(cleanId);
+      if (mirrorUrl != null && mirrorUrl.isNotEmpty) {
+        _cacheStreamUrl(cleanId, mirrorUrl, ttlMinutes: 30);
+        return mirrorUrl;
       }
     } catch (_) {}
 
-    // 4. Fallback: PC Server proxy if configured
+    // Stage 5: PC server fallback
     if (_serverHost.isNotEmpty) {
+      debugPrint('[YouTubeService] Stage 5: Using PC server for $cleanId');
       return '$_serverHost/api/youtube/stream/$cleanId';
     }
 
+    debugPrint('[YouTubeService] All 5 resolution stages failed for $cleanId');
     return null;
   }
 
-  /// Fast racing across multiple public mirrors simultaneously
-  Future<String?> _raceFastStreamInstances(String videoId) async {
+  /// Direct YouTube Android Innertube player endpoint
+  /// Returns unciphered direct audio stream URL for most songs in <300ms
+  Future<String?> _resolveInnertubeAndroid(String videoId) async {
+    try {
+      final url = Uri.parse('https://www.youtube.com/youtubei/v1/player');
+      final payload = {
+        'context': {
+          'client': {
+            'clientName': 'ANDROID',
+            'clientVersion': '19.09.37',
+            'androidSdkVersion': 30,
+            'hl': 'en',
+            'gl': 'US',
+          }
+        },
+        'videoId': videoId,
+      };
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
+      };
+
+      final response = await http
+          .post(url, headers: headers, body: json.encode(payload))
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode != 200) return null;
+
+      final data = json.decode(response.body);
+      final streamingData = data['streamingData'];
+      if (streamingData == null) return null;
+
+      final List<dynamic> formats = [
+        ...(streamingData['adaptiveFormats'] as List<dynamic>? ?? []),
+        ...(streamingData['formats'] as List<dynamic>? ?? []),
+      ];
+
+      // Filter for audio streams with direct un-ciphered URL
+      final audioFormatsWithUrl = formats.where((f) {
+        final mime = f['mimeType'] as String? ?? '';
+        final streamUrl = f['url'] as String? ?? '';
+        return mime.startsWith('audio/') && streamUrl.isNotEmpty;
+      }).toList();
+
+      if (audioFormatsWithUrl.isNotEmpty) {
+        audioFormatsWithUrl.sort((a, b) {
+          final bitA = a['bitrate'] as int? ?? 0;
+          final bitB = b['bitrate'] as int? ?? 0;
+          return bitB.compareTo(bitA);
+        });
+        final bestUrl = audioFormatsWithUrl.first['url'] as String?;
+        if (bestUrl != null && bestUrl.isNotEmpty) {
+          debugPrint('[YouTubeService] Direct Android Innertube audio URL resolved');
+          return bestUrl;
+        }
+      }
+    } catch (e) {
+      debugPrint('[YouTubeService] Android Innertube error: $e');
+    }
+    return null;
+  }
+
+  /// Fast parallel mirror racing
+  Future<String?> _raceMirrors(String videoId) async {
     final endpoints = [
+      'https://inv.tux.pizza/api/v1/videos/$videoId',
+      'https://invidious.projectsegfau.lt/api/v1/videos/$videoId',
+      'https://yewtu.be/api/v1/videos/$videoId',
+      'https://yt.artemislena.eu/api/v1/videos/$videoId',
+      'https://piped-api.garudalinux.org/streams/$videoId',
+      'https://api.piped.private.coffee/streams/$videoId',
       'https://pipedapi.leptons.xyz/streams/$videoId',
-      'https://pipedapi.kavin.rocks/streams/$videoId',
-      'https://api.piped.privacydev.net/streams/$videoId',
-      'https://inv.nadeko.net/api/v1/videos/$videoId',
-      'https://invidious.nerdvpn.de/api/v1/videos/$videoId',
-      'https://invidious.jing.rocks/api/v1/videos/$videoId',
     ];
 
     final completer = Completer<String?>();
@@ -355,28 +484,32 @@ class YouTubeService {
     for (final ep in endpoints) {
       http.get(Uri.parse(ep)).timeout(const Duration(seconds: 4)).then((res) {
         if (!completer.isCompleted && res.statusCode == 200) {
-          final data = json.decode(res.body);
-          // Try Piped structure
-          final audioStreams = data['audioStreams'] as List<dynamic>?;
-          if (audioStreams != null && audioStreams.isNotEmpty) {
-            final url = audioStreams.first['url'] as String?;
-            if (url != null && url.isNotEmpty) {
-              completer.complete(url);
-              return;
-            }
-          }
-          // Try Invidious structure
-          final adaptiveFormats = data['adaptiveFormats'] as List<dynamic>?;
-          if (adaptiveFormats != null && adaptiveFormats.isNotEmpty) {
-            for (final f in adaptiveFormats) {
-              final type = f['type'] as String? ?? '';
-              final url = f['url'] as String? ?? '';
-              if (type.contains('audio') && url.isNotEmpty) {
+          try {
+            final data = json.decode(res.body);
+            // Piped format
+            final audioStreams = data['audioStreams'] as List<dynamic>?;
+            if (audioStreams != null && audioStreams.isNotEmpty) {
+              final sorted = List.from(audioStreams)
+                ..sort((a, b) => (b['bitrate'] as int? ?? 0).compareTo(a['bitrate'] as int? ?? 0));
+              final url = sorted.first['url'] as String?;
+              if (url != null && url.isNotEmpty) {
                 completer.complete(url);
                 return;
               }
             }
-          }
+            // Invidious format
+            final adaptiveFormats = data['adaptiveFormats'] as List<dynamic>?;
+            if (adaptiveFormats != null) {
+              for (final f in adaptiveFormats) {
+                final type = f['type'] as String? ?? '';
+                final url = f['url'] as String? ?? '';
+                if (type.contains('audio') && url.isNotEmpty) {
+                  completer.complete(url);
+                  return;
+                }
+              }
+            }
+          } catch (_) {}
         }
       }).catchError((_) {}).whenComplete(() {
         pending--;
@@ -386,28 +519,29 @@ class YouTubeService {
       });
     }
 
-    return completer.future.timeout(const Duration(seconds: 4), onTimeout: () => null);
+    return completer.future.timeout(const Duration(seconds: 5), onTimeout: () => null);
   }
 
-  void _cacheStreamUrl(String videoId, String url) {
-    _streamCache[videoId] = _CachedStream(url, DateTime.now().add(const Duration(hours: 3)));
+  void _cacheStreamUrl(String videoId, String url, {int ttlMinutes = 55}) {
+    _streamCache[videoId] =
+        _CachedStream(url, DateTime.now().add(Duration(minutes: ttlMinutes)));
   }
 
-  /// Background prefetching for next song in queue so it starts with 0s latency
+  /// Background prefetch next song in queue (zero-gap playback)
   void prefetchNextTrack(String videoId) {
     final cleanId = videoId.replaceFirst('yt:', '').trim();
-    if (_streamCache.containsKey(cleanId) && _streamCache[cleanId]!.isValid) return;
+    final cached = _streamCache[cleanId];
+    if (cached != null && cached.isValid) return;
     resolveStreamUrl(cleanId).catchError((_) => null);
   }
 
-  /// High-Fidelity Autoplay Suggestions (YouTube Radio Engine like Linus)
-  /// Fetches next related songs directly from YouTube's recommendation graph.
+  // ── Related Tracks ─────────────────────────────────────────────────────────
+
   Future<List<Track>> getRelatedTracks(String videoId, String artist) async {
     final cleanId = videoId.replaceFirst('yt:', '').trim();
     if (cleanId.isEmpty) return [];
 
     try {
-      // 1. Query YouTube Next / Up Next Radio API
       final url = Uri.parse('https://www.youtube.com/youtubei/v1/next');
       final payload = {
         'context': {
@@ -423,14 +557,14 @@ class YouTubeService {
 
       final response = await http
           .post(url, headers: {'Content-Type': 'application/json'}, body: json.encode(payload))
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final results = <Track>[];
-        final secondaryResults = data['contents']?['twoColumnWatchNextResults']?['secondaryResults']
-                ?['secondaryResults']?['results'] as List<dynamic>? ??
-            [];
+        final secondaryResults = data['contents']?['twoColumnWatchNextResults']
+                ?['secondaryResults']?['secondaryResults']?['results']
+            as List<dynamic>? ?? [];
 
         for (final item in secondaryResults) {
           final v = item['compactVideoRenderer'];
@@ -479,18 +613,160 @@ class YouTubeService {
       debugPrint('[YouTubeService] Get related tracks error: $e');
     }
 
-    // 2. Semantic Artist Fallback
+    // Artist search fallback
     if (artist.isNotEmpty && artist.toLowerCase() != 'youtube') {
       try {
-        final fallbackTracks = await search('$artist similar songs', limit: 12);
-        return fallbackTracks.where((t) => !t.id.contains(cleanId)).toList();
+        final fallback = await search('$artist similar songs', limit: 12);
+        return fallback.where((t) => !t.id.contains(cleanId)).toList();
       } catch (_) {}
     }
 
     return [];
   }
 
-  /// Download YouTube track to local Linus storage (requires PC server)
+  // ── Standalone Download ────────────────────────────────────────────────────
+
+  /// Download a YouTube track to device's storage.
+  /// Does NOT require PC server — completely standalone.
+  /// Returns (success, filePath, error).
+  Future<({bool success, String? filePath, String? error})> downloadTrackStandalone(
+    Track track, {
+    void Function(double progress)? onProgress,
+  }) async {
+    final cleanId = track.id.replaceFirst('yt:', '');
+    if (cleanId.isEmpty) return (success: false, filePath: null, error: 'Invalid video ID');
+
+    try {
+      // 1. Resolve stream URL
+      String? streamUrl;
+      String ext = 'mp3';
+
+      try {
+        _ensureYtExplode();
+        final manifest = await _ytExplode.videos.streamsClient
+            .getManifest(cleanId)
+            .timeout(const Duration(seconds: 15));
+
+        if (manifest.audioOnly.isNotEmpty) {
+          final sorted = manifest.audioOnly.toList()
+            ..sort((a, b) => b.bitrate.bitsPerSecond.compareTo(a.bitrate.bitsPerSecond));
+          final bestAudio = sorted.first;
+          streamUrl = bestAudio.url.toString();
+          ext = bestAudio.codec.mimeType.contains('webm') ? 'webm' : 'm4a';
+        }
+      } catch (e) {
+        debugPrint('[YouTubeService] Download manifest via explode error: $e');
+      }
+
+      // If explode failed, try resolved stream url
+      if (streamUrl == null || streamUrl.isEmpty) {
+        streamUrl = await resolveStreamUrl(cleanId);
+      }
+
+      if (streamUrl == null || streamUrl.isEmpty) {
+        return (success: false, filePath: null, error: 'Could not obtain audio stream');
+      }
+
+      // 2. Pick download directory
+      final Directory? dir = await _getDownloadDirectory();
+      if (dir == null) {
+        return (success: false, filePath: null, error: 'Cannot access device storage');
+      }
+
+      // 3. Sanitize filename
+      final safeName = track.title
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+      final safeArtist = track.artist
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .trim();
+      final fileName = '$safeName - $safeArtist.$ext';
+      final filePath = '${dir.path}/$fileName';
+      final file = File(filePath);
+
+      // Skip if already downloaded
+      if (await file.exists() && (await file.length()) > 50000) {
+        debugPrint('[YouTubeService] Already downloaded: $filePath');
+        return (success: true, filePath: filePath, error: null);
+      }
+
+      // 4. Download file with progress
+      final client = http.Client();
+      try {
+        final request = http.Request('GET', Uri.parse(streamUrl));
+        final response = await client.send(request).timeout(const Duration(seconds: 25));
+
+        if (response.statusCode != 200 && response.statusCode != 206) {
+          return (success: false, filePath: null, error: 'Server returned HTTP ${response.statusCode}');
+        }
+
+        final contentLength = response.contentLength ?? 0;
+        final sink = file.openWrite();
+        int downloaded = 0;
+
+        await for (final chunk in response.stream) {
+          sink.add(chunk);
+          downloaded += chunk.length;
+          if (contentLength > 0 && onProgress != null) {
+            onProgress(downloaded / contentLength);
+          }
+        }
+
+        await sink.flush();
+        await sink.close();
+
+        debugPrint('[YouTubeService] Downloaded successfully to: $filePath');
+        return (success: true, filePath: filePath, error: null);
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      debugPrint('[YouTubeService] Download error: $e');
+      return (success: false, filePath: null, error: e.toString());
+    }
+  }
+
+  Future<Directory?> _getDownloadDirectory() async {
+    // 1. Try public Download folder if writable
+    try {
+      final extDir = await getExternalStorageDirectory();
+      if (extDir != null) {
+        final parts = extDir.path.split('/Android');
+        final basePath = parts.isNotEmpty ? parts.first : extDir.path;
+        final publicDownload = Directory('$basePath/Download/Linus');
+        await publicDownload.create(recursive: true);
+        final testFile = File('${publicDownload.path}/.probe');
+        await testFile.writeAsString('ok');
+        await testFile.delete();
+        return publicDownload;
+      }
+    } catch (_) {
+      // Scoped storage blocked public download folder
+    }
+
+    // 2. App-specific external storage (publicly accessible by media scanners, zero permissions needed)
+    try {
+      final extDir = await getExternalStorageDirectory();
+      if (extDir != null) {
+        final musicDir = Directory('${extDir.path}/Music');
+        await musicDir.create(recursive: true);
+        return musicDir;
+      }
+    } catch (_) {}
+
+    // 3. Fallback: app documents directory
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      final dir = Directory('${docDir.path}/Linus_Music');
+      await dir.create(recursive: true);
+      return dir;
+    } catch (_) {}
+
+    return null;
+  }
+
+  /// Legacy server-based download (kept for backwards compat)
   Future<bool> downloadToLocal(Track track) async {
     if (_serverHost.isEmpty) return false;
     final cleanId = track.id.replaceFirst('yt:', '');

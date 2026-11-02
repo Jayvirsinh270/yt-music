@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF10141D),
+      backgroundColor: const Color(0xFF080A0F),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => player.scanDeviceTracks(),
@@ -387,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              const SliverToBoxAdapter(child: SizedBox(height: 150)),
             ],
           ),
         ),
@@ -402,11 +402,11 @@ class _HomeScreenState extends State<HomeScreen> {
         width: 110,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E2430),
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF12151E),
+          borderRadius: BorderRadius.circular(14),
           border: isCurrent
               ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5)
-              : null,
+              : Border.all(color: Colors.white.withOpacity(0.06)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

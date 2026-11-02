@@ -186,7 +186,7 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
     final ytColor = const Color(0xFFFF334B);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0E14), // Ultra calm obsidian
+      backgroundColor: const Color(0xFF080A0F), // Ultra calm deep obsidian
       body: SafeArea(
         child: RefreshIndicator(
           color: ytColor,
@@ -685,7 +685,7 @@ class _YouTubeScreenState extends State<YouTubeScreen> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 96),
+                  padding: const EdgeInsets.only(bottom: 150),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {

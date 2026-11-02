@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/local_audio_service.dart';
 import '../services/recommendation_engine.dart';
 import '../widgets/mini_player.dart';
@@ -24,82 +25,123 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
+  final List<_NavItem> _navItems = const [
+    _NavItem(icon: Icons.play_circle_outline_rounded, activeIcon: Icons.play_circle_fill_rounded, label: 'YouTube', activeColor: Color(0xFFFF1744)),
+    _NavItem(icon: Icons.folder_outlined, activeIcon: Icons.folder_rounded, label: 'Local', activeColor: Color(0xFF00E5FF)),
+    _NavItem(icon: Icons.search_outlined, activeIcon: Icons.search_rounded, label: 'Search', activeColor: Color(0xFF7C4DFF)),
+    _NavItem(icon: Icons.library_music_outlined, activeIcon: Icons.library_music_rounded, label: 'Library', activeColor: Color(0xFFFF6B6B)),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final screens = [
       const YouTubeScreen(),
-      HomeScreen(
-        localAudioService: widget.localAudioService,
-        recEngine: widget.recEngine,
-      ),
+      HomeScreen(localAudioService: widget.localAudioService, recEngine: widget.recEngine),
       SearchScreen(localAudioService: widget.localAudioService),
       FavoritesHistoryScreen(recEngine: widget.recEngine),
     ];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF10141D),
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
-          const Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: MiniPlayer(),
-          ),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFF080A0F),
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-              );
-            }
-            return const TextStyle(color: Colors.grey, fontSize: 11);
-          }),
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
-          backgroundColor: const Color(0xFF161B26),
-          elevation: 8,
-          height: 64,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.play_circle_outline_rounded, color: Colors.grey),
-              selectedIcon: Icon(Icons.play_circle_fill_rounded, color: Color(0xFFFF334B)),
-              label: 'YouTube',
+      child: Scaffold(
+        backgroundColor: const Color(0xFF080A0F),
+        body: Stack(
+          children: [
+            // Main screens
+            IndexedStack(index: _currentIndex, children: screens),
+
+            // Mini player floating above nav
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 72,
+              child: MiniPlayer(),
             ),
-            NavigationDestination(
-              icon: Icon(Icons.folder_outlined, color: Colors.grey),
-              selectedIcon: Icon(Icons.folder_rounded, color: Color(0xFF2DD4BF)),
-              label: 'Local',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.search_outlined, color: Colors.grey),
-              selectedIcon: Icon(Icons.search_rounded),
-              label: 'Search',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.favorite_outline_rounded, color: Colors.grey),
-              selectedIcon: Icon(Icons.favorite_rounded),
-              label: 'Library',
+
+            // Floating pill nav bar
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildFloatingNavBar(context),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildFloatingNavBar(BuildContext context) {
+    return Container(
+      height: 72,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D0F15),
+        border: Border(
+          top: BorderSide(color: Colors.white.withOpacity(0.07), width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: List.generate(_navItems.length, (i) => _buildNavTab(i)),
+      ),
+    );
+  }
+
+  Widget _buildNavTab(int index) {
+    final item = _navItems[index];
+    final isSelected = _currentIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (_currentIndex != index) {
+            HapticFeedback.lightImpact();
+            setState(() => _currentIndex = index);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected ? item.activeColor.withOpacity(0.15) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(
+                  isSelected ? item.activeIcon : item.icon,
+                  color: isSelected ? item.activeColor : Colors.grey.shade600,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                item.label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? item.activeColor : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final Color activeColor;
+  const _NavItem({required this.icon, required this.activeIcon, required this.label, required this.activeColor});
 }

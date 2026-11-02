@@ -52,7 +52,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF10141D),
+      backgroundColor: const Color(0xFF080A0F),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +237,7 @@ class _SearchScreenState extends State<SearchScreen> {
             else
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 90, top: 4),
+                  padding: const EdgeInsets.only(bottom: 150, top: 4),
                   itemCount: results.length,
                   itemBuilder: (context, index) {
                     final track = results[index];

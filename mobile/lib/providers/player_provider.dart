@@ -140,13 +140,24 @@ class PlayerProvider extends ChangeNotifier {
     }
   }
 
-  // One-tap Download YouTube Track to Local Storage
-  Future<bool> downloadToLocal(Track track) async {
-    final success = await _ytService.downloadToLocal(track);
-    if (success) {
+  // One-tap Download YouTube Track to Local Storage (standalone, no server needed)
+  // Returns true on success. Shows progress via onProgress callback.
+  Future<bool> downloadToLocal(Track track, {void Function(double)? onProgress}) async {
+    // Try standalone download first (uses youtube_explode_dart directly)
+    final result = await _ytService.downloadTrackStandalone(track, onProgress: onProgress);
+    if (result.success) {
+      // Rescan local tracks after a short delay so the new file shows up
+      Future.delayed(const Duration(seconds: 2), () => scanDeviceTracks());
+      return true;
+    }
+    debugPrint('[PlayerProvider] Standalone download failed: ${result.error}');
+
+    // Fallback: PC server download (if configured)
+    final serverSuccess = await _ytService.downloadToLocal(track);
+    if (serverSuccess) {
       Future.delayed(const Duration(seconds: 4), () => scanDeviceTracks());
     }
-    return success;
+    return serverSuccess;
   }
 
   LocalAudioService get localAudioService => _localAudioService;
@@ -533,6 +544,7 @@ class PlayerProvider extends ChangeNotifier {
   void dispose() {
     _sleepTimer?.cancel();
     _errorController.close();
+    _ytService.dispose();
     super.dispose();
   }
 }

@@ -74,13 +74,30 @@ class LinusApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF10141D),
+          scaffoldBackgroundColor: const Color(0xFF080A0F),
           colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF2DD4BF), // Teal accent
-            secondary: Color(0xFF38BDF8), // Sky blue accent
-            surface: Color(0xFF161B26),
+            primary: Color(0xFF00E5FF),
+            secondary: Color(0xFFFF1744),
+            surface: Color(0xFF111318),
+            onSurface: Colors.white,
           ),
           fontFamily: 'Roboto',
+          navigationBarTheme: const NavigationBarThemeData(
+            backgroundColor: Color(0xFF0D0F15),
+            elevation: 0.0,
+          ),
+          popupMenuTheme: PopupMenuThemeData(
+            color: const Color(0xFF151820),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+          snackBarTheme: const SnackBarThemeData(
+            backgroundColor: Color(0xFF1E2130),
+            contentTextStyle: TextStyle(color: Colors.white),
+          ),
+          bottomSheetTheme: const BottomSheetThemeData(
+            backgroundColor: Color(0xFF0E1018),
+            modalBackgroundColor: Color(0xFF0E1018),
+          ),
         ),
         home: MainNavigationScreen(
           localAudioService: localAudioService,

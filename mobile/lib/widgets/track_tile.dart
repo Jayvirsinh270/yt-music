@@ -30,16 +30,17 @@ class TrackTile extends StatelessWidget {
     final isPlayingThis = isCurrent && player.isPlaying;
     final isBufferingThis = isCurrent && player.isBuffering;
 
+    final accentColor = track.isYouTube ? const Color(0xFFFF1744) : Theme.of(context).colorScheme.primary;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
         color: isCurrent
-            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+            ? accentColor.withOpacity(0.09)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: isCurrent
             ? Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                color: accentColor.withOpacity(0.28),
                 width: 1,
               )
             : null,
@@ -122,7 +123,7 @@ class TrackTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-          color: isCurrent ? Theme.of(context).colorScheme.primary : Colors.white,
+          color: isCurrent ? accentColor : Colors.white,
         ),
       ),
       subtitle: Row(
@@ -171,10 +172,27 @@ class TrackTile extends StatelessWidget {
               player.toggleFavorite(track);
               break;
             case 'download':
-              player.downloadToLocal(track);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Downloading "${track.title}" to local storage...')),
+                SnackBar(
+                  content: Text('Downloading "${track.title}" to device...'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                ),
               );
+              player.downloadToLocal(track).then((ok) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(ok
+                          ? '✓ "${track.title}" saved to device!'
+                          : '✗ Failed to download "${track.title}"'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: ok ? const Color(0xFF1DB954) : Colors.redAccent,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              });
               break;
           }
         },
@@ -294,7 +312,7 @@ class _MiniEqualizerState extends State<_MiniEqualizer>
       width: 3.5,
       height: height.clamp(4.0, 22.0),
       decoration: BoxDecoration(
-        color: const Color(0xFF2DD4BF),
+        color: const Color(0xFF00E5FF),
         borderRadius: BorderRadius.circular(2),
       ),
     );

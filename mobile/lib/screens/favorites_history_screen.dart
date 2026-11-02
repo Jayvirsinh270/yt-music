@@ -18,9 +18,9 @@ class FavoritesHistoryScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFF10141D),
+        backgroundColor: const Color(0xFF080A0F),
         appBar: AppBar(
-          backgroundColor: const Color(0xFF10141D),
+          backgroundColor: const Color(0xFF080A0F),
           elevation: 0,
           title: const Text(
             'Library',
@@ -58,7 +58,7 @@ class FavoritesHistoryScreen extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 100, top: 8),
+                    padding: const EdgeInsets.only(bottom: 150, top: 8),
                     itemCount: favorites.length,
                     itemBuilder: (context, index) {
                       final track = favorites[index];
@@ -87,7 +87,7 @@ class FavoritesHistoryScreen extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 100, top: 8),
+                    padding: const EdgeInsets.only(bottom: 150, top: 8),
                     itemCount: history.length,
                     itemBuilder: (context, index) {
                       final track = history[index];

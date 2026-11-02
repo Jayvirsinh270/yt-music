@@ -32,21 +32,19 @@ class YouTubeService {
     _serverHost = prefs.getString(_prefKeyHost) ?? '';
   }
 
+  bool _isDisposed = false;
+
   void dispose() {
+    _isDisposed = true;
     try {
       _ytExplode.close();
     } catch (_) {}
   }
 
   void _ensureYtExplode() {
-    // If closed or null, re-initialize
-    try {
-      // simple access test
-      if (_ytExplode.videos.isClosed) {
-        _ytExplode = yte.YoutubeExplode();
-      }
-    } catch (_) {
+    if (_isDisposed) {
       _ytExplode = yte.YoutubeExplode();
+      _isDisposed = false;
     }
   }
 

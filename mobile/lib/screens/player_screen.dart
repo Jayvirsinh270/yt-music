@@ -563,7 +563,7 @@ class _SleepTimerSheet extends StatelessWidget {
           const SizedBox(height: 12),
           Container(
             width: 42, height: 4,
-            decoration: BoxDecoration(color: Colors.white20, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 18),
@@ -611,7 +611,7 @@ class _QueueSheet extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               width: 42, height: 4,
-              decoration: BoxDecoration(color: Colors.white20, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
             ),
 
             // Header
@@ -896,7 +896,7 @@ class _QueueItem extends StatelessWidget {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 28),
             ),
-            const Icon(Icons.drag_handle_rounded, color: Colors.white20, size: 18),
+            const Icon(Icons.drag_handle_rounded, color: Colors.white24, size: 18),
           ])
         : null),
   );

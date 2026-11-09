@@ -9,11 +9,25 @@ if (typeof _ytCurrentStreamType === 'undefined') var _ytCurrentStreamType = '';
 if (typeof _ytCurrentStreamTrack === 'undefined') var _ytCurrentStreamTrack = null;
 
 function getActivePlaybackTrack() {
+  if (window.currentActiveTrack) {
+    return window.currentActiveTrack;
+  }
+  if (window._lastFullscreenTrack) {
+    return window._lastFullscreenTrack;
+  }
   if (_ytCurrentStreamId && _ytCurrentStreamTrack) {
     return _ytCurrentStreamTrack;
   }
-  return queue[currentIndex] || null;
+  if (typeof queue !== 'undefined' && queue && typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < queue.length) {
+    return queue[currentIndex];
+  }
+  if (typeof state !== 'undefined' && state.last_played_track_id && typeof trackById === 'function') {
+    const t = trackById(state.last_played_track_id);
+    if (t && t.id) return t;
+  }
+  return null;
 }
+window.getActivePlaybackTrack = getActivePlaybackTrack;
 
 function _buildExploreCardHTML(item) {
   const isStreaming = item.id && item.id === _ytCurrentStreamId;
@@ -329,6 +343,8 @@ async function streamYouTubeAudio(videoId, title, artist, thumbnail, duration) {
     _isYouTubeStream: true,
   };
   _ytCurrentStreamTrack = ytTrack;
+  window.currentActiveTrack = ytTrack;
+  window._lastFullscreenTrack = ytTrack;
   _lastPrewarmedTrackId = null;
 
   if (typeof state !== 'undefined') {

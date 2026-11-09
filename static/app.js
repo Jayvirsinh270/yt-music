@@ -117,10 +117,20 @@ const escapeHtml = v => String(v).replace(/[&<>'"]/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 function getActivePlaybackTrack() {
+  if (window.currentActiveTrack) {
+    return window.currentActiveTrack;
+  }
   if (typeof _ytCurrentStreamId !== 'undefined' && _ytCurrentStreamId && _ytCurrentStreamTrack) {
     return _ytCurrentStreamTrack;
   }
-  return (typeof queue !== 'undefined' && queue && queue[currentIndex]) || null;
+  if (typeof queue !== 'undefined' && queue && typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < queue.length) {
+    return queue[currentIndex];
+  }
+  if (typeof state !== 'undefined' && state.last_played_track_id && typeof trackById === 'function') {
+    const t = trackById(state.last_played_track_id);
+    if (t && t.id) return t;
+  }
+  return null;
 }
 
 window.audio = audio;
@@ -393,6 +403,9 @@ window.addEventListener('pagehide', () => {
 function restoreLastPlaybackSession(trackId, position) {
   const track = trackById(trackId);
   if (!track || track.missing || track.media_type === 'video') return;
+
+  window.currentActiveTrack = track;
+  window._lastFullscreenTrack = track;
 
   currentIndex = queue.findIndex(t => t.id === trackId);
   if (currentIndex < 0) {
@@ -2619,12 +2632,28 @@ let transitionTimeout1, transitionTimeout2;
 
 function syncNowPlayingUI(track) {
   if (!track) return;
+  window.currentActiveTrack = track;
+  window._lastFullscreenTrack = track;
+  if (!track.is_online && !track._isYouTubeStream && !String(track.id || '').startsWith('yt:') && !track.video_id) {
+    if (typeof _ytCurrentStreamId !== 'undefined') _ytCurrentStreamId = '';
+    if (typeof _ytCurrentStreamTrack !== 'undefined') _ytCurrentStreamTrack = null;
+    if (typeof _ytCurrentStreamType !== 'undefined') _ytCurrentStreamType = '';
+  } else if (track.is_online || track._isYouTubeStream || String(track.id || '').startsWith('yt:') || track.video_id) {
+    const vid = track.video_id || (String(track.id || '').startsWith('yt:') ? String(track.id).replace('yt:', '') : '');
+    if (vid) {
+      if (typeof _ytCurrentStreamId !== 'undefined') _ytCurrentStreamId = vid;
+      if (typeof _ytCurrentStreamTrack !== 'undefined') _ytCurrentStreamTrack = track;
+      if (typeof _ytCurrentStreamType !== 'undefined') _ytCurrentStreamType = 'audio';
+    }
+  }
+
   const id = track.id;
   $('#now-title').textContent = track.title || 'Unknown Title';
   $('#now-artist').textContent = track.artist || 'Unknown Artist';
-  if (track.has_artwork && track.artwork_url) {
-    $('#now-art').innerHTML = `<img src="${escapeHtml(track.artwork_url)}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-    $('#album-art-box').innerHTML = `<img src="${escapeHtml(track.artwork_url)}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;box-shadow:0 0 20px rgba(0,0,0,0.6);">`;
+  const artUrl = track.artwork_url || track.thumbnail || track.thumbnail_url || (track.has_artwork && track.id ? `/api/track/${encodeURIComponent(track.id)}/artwork` : (track.video_id ? `https://i.ytimg.com/vi/${track.video_id}/hqdefault.jpg` : (track.id && String(track.id).startsWith('yt:') ? `https://i.ytimg.com/vi/${String(track.id).replace('yt:','')}/hqdefault.jpg` : '')));
+  if (artUrl) {
+    $('#now-art').innerHTML = `<img src="${escapeHtml(artUrl)}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    $('#album-art-box').innerHTML = `<img src="${escapeHtml(artUrl)}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;box-shadow:0 0 20px rgba(0,0,0,0.6);">`;
   } else {
     $('#now-art').innerHTML = `<i class="ph-fill ph-music-notes"></i>`;
     $('#album-art-box').innerHTML = `<i class="ph-fill ph-music-notes-simple"></i>`;
@@ -2874,6 +2903,8 @@ async function startAutoDJCrossfade(nextTrack, customDuration = null) {
   }
 
   activeDeck = incomingDeck;
+  window.currentActiveTrack = nextTrack;
+  window._lastFullscreenTrack = nextTrack;
   syncNowPlayingUI(nextTrack);
   state.last_played_track_id = nextTrack.id;
   state.last_played_position = 0;
@@ -2905,13 +2936,19 @@ function playById(id) {
   if (id && id.startsWith('yt:')) {
     const vid = id.replace('yt:', '');
     const t = trackById(id);
-    streamYouTubeAudio(t.video_id || vid, t.title, t.artist, t.artwork_url, t.duration);
+    streamYouTubeAudio(t.video_id || vid, t.title, t.artist, t.artwork_url || t.thumbnail, t.duration);
     return;
   }
 
   const track = trackById(id);
   if (!track || track.missing) return notify('Track is missing from disk.');
   if (track.media_type === 'video') { openVideoPlayer(id); return; }
+
+  window.currentActiveTrack = track;
+  window._lastFullscreenTrack = track;
+  if (typeof _ytCurrentStreamId !== 'undefined') _ytCurrentStreamId = '';
+  if (typeof _ytCurrentStreamTrack !== 'undefined') _ytCurrentStreamTrack = null;
+  if (typeof _ytCurrentStreamType !== 'undefined') _ytCurrentStreamType = '';
 
   currentIndex = queue.findIndex(t => t.id === id);
   if (currentIndex < 0) {

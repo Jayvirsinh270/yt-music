@@ -170,6 +170,12 @@ function setFullscreenMode(modeId) {
   if (typeof startAudioVisualizer === 'function') {
     startAudioVisualizer();
   }
+  if (fsPlayer && fsPlayer.classList.contains('open')) {
+    const activeTrack = (typeof getActivePlaybackTrack === 'function' ? getActivePlaybackTrack() : (window.getActivePlaybackTrack ? window.getActivePlaybackTrack() : null)) || window.currentActiveTrack || window._lastFullscreenTrack;
+    if (activeTrack && typeof updateFullscreenUI === 'function') {
+      updateFullscreenUI(activeTrack);
+    }
+  }
 }
 
 function toggleVisualizerPanel(forceState) {
@@ -375,7 +381,9 @@ document.addEventListener('MSFullscreenChange', updateTrueFullscreenUI);
 
 // Open/Close Fullscreen Player
 function openFullscreenPlayer(triggerNative = true) {
-  if (!audio.src) {
+  const curAudio = (typeof getActiveAudio === 'function' ? getActiveAudio() : (window.getActiveAudio ? window.getActiveAudio() : null)) || audio;
+  const hasAudioSource = curAudio && (curAudio.src || curAudio.currentSrc);
+  if (!hasAudioSource) {
     const first = (typeof state !== 'undefined' && state.tracks) ? state.tracks.find(t => t.media_type !== 'video') : ((typeof queue !== 'undefined' && queue) ? queue[0] : null);
     if (first && typeof playById === 'function') {
       playById(first.id);
@@ -396,7 +404,7 @@ function openFullscreenPlayer(triggerNative = true) {
   resetFsIdleTimer();
 
   // Refresh active track UI in fullscreen
-  const activeTrack = (typeof getActivePlaybackTrack === 'function' ? getActivePlaybackTrack() : (window.getActivePlaybackTrack ? window.getActivePlaybackTrack() : null)) || (typeof queue !== 'undefined' && queue && queue[currentIndex]);
+  const activeTrack = (typeof getActivePlaybackTrack === 'function' ? getActivePlaybackTrack() : (window.getActivePlaybackTrack ? window.getActivePlaybackTrack() : null)) || window.currentActiveTrack || window._lastFullscreenTrack || (typeof queue !== 'undefined' && queue && queue[currentIndex]);
   if (activeTrack && typeof updateFullscreenUI === 'function') {
     updateFullscreenUI(activeTrack);
   }
@@ -469,9 +477,14 @@ function getTrackColors(str) {
 // Background crossfade & UI update
 function updateFullscreenUI(track) {
   if (!track) {
-    track = (typeof getActivePlaybackTrack === 'function' ? getActivePlaybackTrack() : (window.getActivePlaybackTrack ? window.getActivePlaybackTrack() : null)) || (typeof queue !== 'undefined' && queue && queue[currentIndex]);
+    track = (typeof getActivePlaybackTrack === 'function' ? getActivePlaybackTrack() : (window.getActivePlaybackTrack ? window.getActivePlaybackTrack() : null)) || window.currentActiveTrack || window._lastFullscreenTrack || (typeof queue !== 'undefined' && queue && queue[currentIndex]);
   }
   if (!track) return;
+  window._lastFullscreenTrack = track;
+  window.currentActiveTrack = track;
+
+  const artworkUrl = track.artwork_url || track.thumbnail || track.thumbnail_url || (track.has_artwork && track.id ? `/api/track/${encodeURIComponent(track.id)}/artwork` : (track.video_id ? `https://i.ytimg.com/vi/${track.video_id}/hqdefault.jpg` : (track.id && String(track.id).startsWith('yt:') ? `https://i.ytimg.com/vi/${String(track.id).replace('yt:','')}/hqdefault.jpg` : '')));
+  const hasArtwork = Boolean(artworkUrl);
 
   const c = getTrackColors((track.id || '') + (track.title || ''));
   let bgStyle = `linear-gradient(135deg, ${c[0]}, ${c[1]})`;
@@ -505,24 +518,24 @@ function updateFullscreenUI(track) {
     if (oldBg) oldBg.style.opacity = '0';
   }
 
-  $('#fs-title').textContent = track.title;
-  $('#fs-artist').textContent = track.artist;
+  $('#fs-title').textContent = track.title || 'Unknown Title';
+  $('#fs-artist').textContent = track.artist || 'Unknown Artist';
   
   // Vinyl Mode
-  if (track.has_artwork && track.artwork_url) {
-    $('#fs-disk-art').innerHTML = `<img src="${track.artwork_url}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  if (hasArtwork) {
+    $('#fs-disk-art').innerHTML = `<img src="${artworkUrl}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     $('#fs-disk-art').style.background = 'none';
   } else {
-    $('#fs-disk-art').innerHTML = `<span id="fs-disk-letter" style="font-size: 72px; font-weight: bold; color: rgba(255,255,255,0.2);">${track.title.slice(0,1).toUpperCase()}</span>`;
+    $('#fs-disk-art').innerHTML = `<span id="fs-disk-letter" style="font-size: 72px; font-weight: bold; color: rgba(255,255,255,0.2);">${(track.title || '?').slice(0,1).toUpperCase()}</span>`;
     $('#fs-disk-art').style.background = bgStyle;
   }
   
   // Modern Mode
-  if (track.has_artwork && track.artwork_url) {
-    $('#fs-modern-art').innerHTML = `<img src="${track.artwork_url}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`;
+  if (hasArtwork) {
+    $('#fs-modern-art').innerHTML = `<img src="${artworkUrl}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`;
     $('#fs-modern-art').style.background = 'none';
   } else {
-    $('#fs-modern-art').innerHTML = `<span id="fs-modern-letter" style="font-size: 96px; font-weight: bold; color: rgba(255,255,255,0.3);">${track.title.slice(0,1).toUpperCase()}</span>`;
+    $('#fs-modern-art').innerHTML = `<span id="fs-modern-letter" style="font-size: 96px; font-weight: bold; color: rgba(255,255,255,0.3);">${(track.title || '?').slice(0,1).toUpperCase()}</span>`;
     $('#fs-modern-art').style.background = bgStyle;
   }
 
@@ -530,14 +543,14 @@ function updateFullscreenUI(track) {
   const stageArt = $('#stage-album-art');
   const stageLetter = $('#stage-art-letter');
   if (stageArt) {
-    if (track.has_artwork && track.artwork_url) {
-      stageArt.src = track.artwork_url;
+    if (hasArtwork) {
+      stageArt.src = artworkUrl;
       stageArt.classList.remove('hidden');
       if (stageLetter) stageLetter.classList.add('hidden');
     } else {
       stageArt.classList.add('hidden');
       if (stageLetter) {
-        stageLetter.textContent = track.title.slice(0, 1).toUpperCase();
+        stageLetter.textContent = (track.title || '?').slice(0, 1).toUpperCase();
         stageLetter.classList.remove('hidden');
       }
     }
@@ -547,23 +560,23 @@ function updateFullscreenUI(track) {
   const stageDiscArt = $('#stage-disc-art');
   const stageDiscLetter = $('#stage-disc-letter');
   if (stageDiscArt) {
-    if (track.has_artwork && track.artwork_url) {
-      stageDiscArt.src = track.artwork_url;
+    if (hasArtwork) {
+      stageDiscArt.src = artworkUrl;
       stageDiscArt.classList.remove('hidden');
       if (stageDiscLetter) stageDiscLetter.classList.add('hidden');
     } else {
       stageDiscArt.classList.add('hidden');
       if (stageDiscLetter) {
-        stageDiscLetter.textContent = track.title.slice(0, 1).toUpperCase();
+        stageDiscLetter.textContent = (track.title || '?').slice(0, 1).toUpperCase();
         stageDiscLetter.classList.remove('hidden');
       }
     }
   }
 
   const stageTitle = $('#stage-track-title');
-  if (stageTitle) stageTitle.textContent = track.title;
+  if (stageTitle) stageTitle.textContent = track.title || 'Unknown Title';
   const stageArtist = $('#stage-track-artist');
-  if (stageArtist) stageArtist.textContent = track.artist;
+  if (stageArtist) stageArtist.textContent = track.artist || 'Unknown Artist';
 
   // 90s Walkman LCD Deck Sync
   const walkmanTrack = $('#walkman-track-no');
@@ -583,10 +596,10 @@ function updateFullscreenUI(track) {
   // Mini Rolling Disk Artwork (Bottom-Left Dock)
   const miniArt = $('#fs-mini-art');
   if (miniArt) {
-    if (track.has_artwork && track.artwork_url) {
-      miniArt.innerHTML = `<img src="${track.artwork_url}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    if (hasArtwork) {
+      miniArt.innerHTML = `<img src="${artworkUrl}" alt="Artwork" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
     } else {
-      miniArt.innerHTML = `<span style="font-size:16px;font-weight:bold;color:#fff;">${track.title.slice(0,1).toUpperCase()}</span>`;
+      miniArt.innerHTML = `<span style="font-size:16px;font-weight:bold;color:#fff;">${(track.title || '?').slice(0,1).toUpperCase()}</span>`;
     }
   }
 

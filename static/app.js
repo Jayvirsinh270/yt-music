@@ -2696,6 +2696,9 @@ function syncNowPlayingUI(track) {
   updateMediaSessionMetadata(track);
   applyChameleonPalette(track);
   updateFullscreenUI(track);
+  if (window.FolderWallpaperEngine && typeof window.FolderWallpaperEngine.onSongChange === 'function') {
+    window.FolderWallpaperEngine.onSongChange();
+  }
   if (typeof window.refreshTrackWaveform === 'function') {
     window.refreshTrackWaveform(track);
   }

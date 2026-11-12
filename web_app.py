@@ -1460,6 +1460,72 @@ def upload_wallpaper():
         return jsonify({"error": str(e)}), 500
 
 
+@app.post("/api/wallpaper/scan-local-folder")
+def scan_wallpaper_folder():
+    """Scans a local PC folder for image files to use in the background wallpaper slideshow."""
+    import urllib.parse
+    data = request.get_json(silent=True) or {}
+    folder_path = (data.get("folder_path") or "").strip()
+    if not folder_path:
+        return jsonify({"error": "Folder path is required."}), 400
+
+    p = Path(folder_path).expanduser().resolve()
+    if not p.exists() or not p.is_dir():
+        return jsonify({"error": f"Folder not found or is not a directory: {folder_path}"}), 404
+
+    valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"}
+    image_files = []
+    try:
+        for entry in sorted(p.iterdir()):
+            if entry.is_file() and entry.suffix.lower() in valid_exts:
+                image_files.append({
+                    "name": entry.name,
+                    "path": str(entry),
+                    "url": f"/api/wallpaper/local-file?path={urllib.parse.quote(str(entry))}",
+                    "size": entry.stat().st_size
+                })
+    except Exception as e:
+        return jsonify({"error": f"Failed to read directory: {e}"}), 500
+
+    if not image_files:
+        return jsonify({"error": "No image files (.jpg, .png, .webp, .gif) found in this folder."}), 404
+
+    return jsonify({
+        "status": "success",
+        "folder_path": str(p),
+        "folder_name": p.name,
+        "count": len(image_files),
+        "images": image_files
+    })
+
+
+@app.get("/api/wallpaper/local-file")
+def get_local_wallpaper_file():
+    """Streams a local image file for the wallpaper background."""
+    raw_path = request.args.get("path", "").strip()
+    if not raw_path:
+        return jsonify({"error": "Missing path parameter"}), 400
+
+    p = Path(raw_path).expanduser().resolve()
+    if not p.exists() or not p.is_file():
+        return jsonify({"error": "File not found"}), 404
+
+    valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"}
+    if p.suffix.lower() not in valid_exts:
+        return jsonify({"error": "Invalid file type"}), 400
+
+    mime_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".avif": "image/avif",
+        ".gif": "image/gif"
+    }
+    mimetype = mime_types.get(p.suffix.lower(), "image/jpeg")
+    return send_file(str(p), mimetype=mimetype)
+
+
 @app.post("/api/youtube/playlist-info")
 def youtube_playlist_info():
     """Extracts tracklist and playlist metadata from a YouTube playlist URL."""

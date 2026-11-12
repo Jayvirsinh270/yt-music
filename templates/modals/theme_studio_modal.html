@@ -207,7 +207,110 @@
 
         <!-- OUTSIDE FOLDERS: Custom Upload Boxes for Personal Photo & Video -->
         <div class="studio-section-title" style="margin-top:20px;">
-          <span>📁 Import Personal Custom Media (Outside Folders)</span>
+          <span>📁 Import Personal Custom Media & Folder Slideshow</span>
+        </div>
+
+        <!-- Windows PC-Style Wallpaper Folder Slideshow Card (Enhanced Edition) -->
+        <div class="media-import-card folder-slideshow-card" id="folder-slideshow-card" style="margin-bottom: 14px;">
+          <div class="import-card-header">
+            <div class="import-icon-box folder-glow-icon"><i class="ph-fill ph-folder-open"></i></div>
+            <div style="flex:1;">
+              <strong>📁 Wallpaper Folder Slideshow (Windows-Style & Enhanced)</strong>
+              <span>Rotate background wallpapers automatically from any folder on your computer — with smooth cinematic crossfade & music sync</span>
+            </div>
+          </div>
+
+          <!-- Folder Select Actions -->
+          <div class="folder-select-actions">
+            <input type="file" id="wallpaper-folder-input" webkitdirectory directory multiple accept="image/*" style="display:none;">
+            <input type="file" id="wallpaper-multifile-input" multiple accept="image/*" style="display:none;">
+
+            <div class="folder-btn-row">
+              <button type="button" class="btn-primary" id="btn-pick-wallpaper-folder">
+                <i class="ph-fill ph-folder-simple-star"></i> Select Wallpaper Folder
+              </button>
+              <button type="button" class="btn-secondary" id="btn-pick-wallpaper-files">
+                <i class="ph-bold ph-images"></i> Pick Multiple Photos
+              </button>
+            </div>
+
+            <!-- Local Drive Path Input (Direct PC Integration) -->
+            <div class="local-path-input-group">
+              <span class="muted" style="font-size:11px;">Or enter local PC folder path (e.g. <code>C:\Users\Name\Pictures\Wallpapers</code> or <code>D:\Wallpapers</code>):</span>
+              <div class="path-search-row">
+                <input type="text" id="wallpaper-folder-path-input" placeholder="e.g. D:\Wallpapers" class="field-input">
+                <button type="button" class="btn-secondary" id="btn-scan-wallpaper-path">
+                  <i class="ph-bold ph-magnifying-glass"></i> Scan Folder
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Slideshow Controller Panel (shown when folder is active) -->
+          <div class="folder-active-panel hidden" id="folder-active-panel">
+            <div class="folder-status-bar">
+              <div class="folder-info-badge">
+                <i class="ph-fill ph-folder"></i>
+                <span id="folder-active-name">Wallpapers</span>
+                <span class="folder-count-pill" id="folder-active-count">0 photos</span>
+              </div>
+              <div class="folder-nav-controls">
+                <button type="button" class="folder-ctrl-btn" id="folder-prev-btn" title="Previous Wallpaper (Left Arrow)">
+                  <i class="ph-bold ph-caret-left"></i>
+                </button>
+                <button type="button" class="folder-ctrl-btn" id="folder-playpause-btn" title="Pause / Resume Slideshow">
+                  <i class="ph-fill ph-pause"></i>
+                </button>
+                <button type="button" class="folder-ctrl-btn" id="folder-next-btn" title="Next Wallpaper (Right Arrow)">
+                  <i class="ph-bold ph-caret-right"></i>
+                </button>
+                <button type="button" class="folder-ctrl-btn folder-clear-btn" id="folder-clear-btn" title="Remove / Clear Folder">
+                  <i class="ph-bold ph-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="current-photo-label" id="folder-current-label">
+              <i class="ph ph-image"></i> <span id="folder-current-name">No photo loaded</span>
+            </div>
+
+            <!-- Interactive Filmstrip Preview Tray -->
+            <div class="folder-filmstrip-tray" id="folder-filmstrip-tray">
+              <!-- Dynamically populated with interactive thumbnails -->
+            </div>
+
+            <!-- Slideshow Settings Row -->
+            <div class="slideshow-options-grid">
+              <div class="slideshow-opt-item">
+                <label for="folder-interval-select"><i class="ph-bold ph-clock"></i> Change Picture:</label>
+                <select id="folder-interval-select" class="field-input custom-select-sm">
+                  <option value="song">🎵 On Every Song Change (Music Sync)</option>
+                  <option value="30">⏱️ Every 30 seconds</option>
+                  <option value="60" selected>⏱️ Every 1 minute</option>
+                  <option value="180">⏱️ Every 3 minutes</option>
+                  <option value="300">⏱️ Every 5 minutes</option>
+                  <option value="600">⏱️ Every 10 minutes</option>
+                  <option value="900">⏱️ Every 15 minutes</option>
+                  <option value="1800">⏱️ Every 30 minutes</option>
+                  <option value="3600">⏱️ Every 1 hour</option>
+                </select>
+              </div>
+
+              <div class="slideshow-opt-item">
+                <label class="toggle-control-label">
+                  <input type="checkbox" id="folder-shuffle-toggle">
+                  <span><i class="ph-bold ph-shuffle"></i> Shuffle Order</span>
+                </label>
+              </div>
+
+              <div class="slideshow-opt-item">
+                <label class="toggle-control-label">
+                  <input type="checkbox" id="folder-kenburns-toggle" checked>
+                  <span><i class="ph-bold ph-sparkle"></i> Ken Burns Pan & Zoom</span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="custom-media-import-deck">

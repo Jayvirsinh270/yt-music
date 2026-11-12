@@ -353,6 +353,49 @@
       action: () => window.openWallpaperGallery?.('main')
     },
     {
+      id: 'act-wallpaper-folder',
+      category: 'actions',
+      title: 'Choose Wallpaper Folder (Slideshow)',
+      subtitle: 'Select a PC directory of photos to rotate background wallpapers with music sync',
+      icon: 'ph-fill ph-folder-open',
+      color: '#e5a95d',
+      badge: 'Wallpaper',
+      action: () => {
+        $('#theme-studio-sheet')?.showModal();
+        setTimeout(() => $('#btn-pick-wallpaper-folder')?.click(), 250);
+      }
+    },
+    {
+      id: 'act-wallpaper-folder-next',
+      category: 'actions',
+      title: 'Next Wallpaper Photo (Folder Slideshow)',
+      subtitle: 'Switch to the next photo in your background wallpaper folder',
+      icon: 'ph-bold ph-caret-right',
+      color: '#e5a95d',
+      badge: 'Wallpaper',
+      action: () => window.FolderWallpaperEngine?.nextImage(true)
+    },
+    {
+      id: 'act-wallpaper-folder-prev',
+      category: 'actions',
+      title: 'Previous Wallpaper Photo (Folder Slideshow)',
+      subtitle: 'Switch to the previous photo in your background wallpaper folder',
+      icon: 'ph-bold ph-caret-left',
+      color: '#e5a95d',
+      badge: 'Wallpaper',
+      action: () => window.FolderWallpaperEngine?.prevImage(true)
+    },
+    {
+      id: 'act-wallpaper-folder-pause',
+      category: 'actions',
+      title: 'Toggle Wallpaper Slideshow (Play / Pause)',
+      subtitle: 'Pause or resume automatic rotation of background photos',
+      icon: 'ph-bold ph-pause',
+      color: '#e5a95d',
+      badge: 'Wallpaper',
+      action: () => window.FolderWallpaperEngine?.togglePlayPause()
+    },
+    {
       id: 'act-rescan',
       category: 'actions',
       title: 'Rescan Music Library',

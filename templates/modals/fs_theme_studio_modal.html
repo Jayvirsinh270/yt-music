@@ -158,6 +158,57 @@
           <span>📁 Import Custom Media for Fullscreen (Outside Folders)</span>
         </div>
 
+        <!-- Fullscreen Wallpaper Folder Slideshow Card -->
+        <div class="studio-section-title" style="margin-top:20px;">
+          <span>📁 Wallpaper Folder Slideshow (Shared with Main App)</span>
+        </div>
+        <div class="media-import-card folder-slideshow-card" id="fs-folder-slideshow-card" style="margin-bottom: 14px;">
+          <div class="import-card-header">
+            <div class="import-icon-box folder-glow-icon"><i class="ph-fill ph-folder-open"></i></div>
+            <div style="flex:1;">
+              <strong>Choose Fullscreen Wallpaper Folder</strong>
+              <span>Rotate high-res photos automatically behind the Fullscreen Player (Stage, Vinyl & Clean Canvas modes)</span>
+            </div>
+          </div>
+          <div class="folder-select-actions">
+            <div class="folder-btn-row">
+              <button type="button" class="btn-primary" id="fs-btn-pick-wallpaper-folder">
+                <i class="ph-fill ph-folder-simple-star"></i> Select Wallpaper Folder
+              </button>
+              <button type="button" class="btn-secondary" id="fs-btn-pick-wallpaper-files">
+                <i class="ph-bold ph-images"></i> Pick Multiple Photos
+              </button>
+            </div>
+          </div>
+          <div class="folder-active-panel hidden" id="fs-folder-active-panel">
+            <div class="folder-status-bar">
+              <div class="folder-info-badge">
+                <i class="ph-fill ph-folder"></i>
+                <span id="fs-folder-active-name">Wallpapers</span>
+                <span class="folder-count-pill" id="fs-folder-active-count">0 photos</span>
+              </div>
+              <div class="folder-nav-controls">
+                <button type="button" class="folder-ctrl-btn" id="fs-folder-prev-btn" title="Previous Wallpaper">
+                  <i class="ph-bold ph-caret-left"></i>
+                </button>
+                <button type="button" class="folder-ctrl-btn" id="fs-folder-playpause-btn" title="Pause / Resume Slideshow">
+                  <i class="ph-fill ph-pause"></i>
+                </button>
+                <button type="button" class="folder-ctrl-btn" id="fs-folder-next-btn" title="Next Wallpaper">
+                  <i class="ph-bold ph-caret-right"></i>
+                </button>
+                <button type="button" class="folder-ctrl-btn folder-clear-btn" id="fs-folder-clear-btn" title="Remove Folder">
+                  <i class="ph-bold ph-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="current-photo-label" id="fs-folder-current-label">
+              <i class="ph ph-image"></i> <span id="fs-folder-current-name">No photo loaded</span>
+            </div>
+            <div class="folder-filmstrip-tray" id="fs-folder-filmstrip-tray"></div>
+          </div>
+        </div>
+
         <div class="custom-media-import-deck">
           <!-- Custom Photo Import Card -->
           <div class="media-import-card">

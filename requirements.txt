@@ -8,7 +8,9 @@ pypresence>=4.3.0            # Discord Rich Presence integration
 python-dotenv>=1.0.1         # Environment variable configuration (.env)
 Werkzeug>=3.0.0              # WSGI utility library
 
+# Development & Testing
+pytest>=8.0.0                # Test suite execution
+
 # Optional Enhancements
-# pytest>=8.0.0              # Test suite execution
 # faster-whisper>=1.0.0      # Offline AI-powered lyrics forced alignment
 # google-generativeai>=0.8.0 # Cloud AI lyrics alignment fallback

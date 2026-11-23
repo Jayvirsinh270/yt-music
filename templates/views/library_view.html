@@ -40,6 +40,44 @@
         </div>
 
         <!-- =====================================================
+             🌅 Soundtrack of Your Day — Circadian Time Capsule Card
+        ===================================================== -->
+        <div class="circadian-capsule-card" id="circadian-capsule-card" style="display:none;">
+          <div class="circadian-capsule-inner" id="circadian-capsule-inner">
+            <div class="circadian-capsule-glow" id="circadian-capsule-glow"></div>
+            <div class="circadian-capsule-content">
+              <div class="circadian-badge-row">
+                <span class="circadian-phase-tag" id="circadian-phase-tag">
+                  <i class="ph-fill ph-sun-horizon" id="circadian-phase-icon"></i>
+                  <span id="circadian-phase-label">Soundtrack of Your Day</span>
+                </span>
+                <span class="circadian-clock-tag" id="circadian-clock-tag">
+                  <i class="ph-bold ph-clock"></i>
+                  <span id="circadian-clock-val">Current Flow</span>
+                </span>
+              </div>
+              <h2 class="circadian-title" id="circadian-title">Midday Focus Flow</h2>
+              <p class="circadian-subtitle" id="circadian-subtitle">Rhythmic flow & steady momentum to power your afternoon.</p>
+              
+              <div class="circadian-action-row">
+                <button class="circadian-play-btn" id="circadian-play-btn" title="Tune player into this hour's time capsule">
+                  <i class="ph-fill ph-play"></i>
+                  <span>Tune Into This Hour</span>
+                </button>
+                <button class="circadian-save-btn" id="circadian-save-btn" title="Save this Circadian Time Capsule to Playlists">
+                  <i class="ph-bold ph-folder-simple-plus"></i>
+                  <span>Save as Playlist</span>
+                </button>
+                <div class="circadian-stats-row">
+                  <span class="circadian-track-count" id="circadian-track-count">15 Tracks · 45 min</span>
+                  <div class="circadian-avatar-stack" id="circadian-avatar-stack"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================
              6-Card Quick Launchpad (Instant 1-Click Dopamine Grid)
         ===================================================== -->
         <div class="rec-quick-grid" id="rec-quick-grid">
@@ -86,6 +124,9 @@
                   </button>
                 </div>
                 <div class="hero-np-extra-btns">
+                  <button class="hero-np-sub-btn" id="hero-radio-btn" title="Start Infinite Radio: Play more like this">
+                    <i class="ph-bold ph-broadcast"></i>
+                  </button>
                   <button class="hero-np-sub-btn" id="hero-fav-btn" title="Favorite">
                     <i class="ph ph-star"></i>
                   </button>
@@ -185,6 +226,10 @@
                   <i class="ph-bold ph-arrows-down-up"></i>
                   <span>Morph Queue</span>
                 </button>
+                <button class="vibe-action-btn btn-secondary" id="vibe-save-mix-btn" title="Save this 15-track curated vibe mix to Playlists">
+                  <i class="ph-bold ph-folder-simple-plus"></i>
+                  <span>Save Mix</span>
+                </button>
                 <button class="vibe-action-btn btn-primary" id="vibe-instant-mix-btn" title="Play 15-track curated mix for this mood">
                   <i class="ph-fill ph-play"></i>
                   <span>Play Vibe Mix</span>
@@ -222,6 +267,12 @@
                   <h3 class="rec-shelf-title">Your Sonic Identity</h3>
                   <p class="rec-shelf-sub">Your personal taste profile and listening DNA</p>
                 </div>
+              </div>
+              <div class="rec-shelf-actions">
+                <button class="sonic-dna-share-btn" id="sonic-dna-share-btn" title="Export high-resolution Sonic DNA Card">
+                  <i class="ph-bold ph-camera"></i>
+                  <span>Share DNA Card</span>
+                </button>
               </div>
             </div>
             <div class="sonic-dna-card" id="sonic-dna-card"></div>

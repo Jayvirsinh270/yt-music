@@ -176,6 +176,21 @@ function initWeeklyRewind() {
     });
   }
 
+  // Save Weekly Mix as Playlist
+  const savePlaylistBtn = document.getElementById('rewind-save-playlist-btn');
+  if (savePlaylistBtn && !savePlaylistBtn._rewindBound) {
+    savePlaylistBtn._rewindBound = true;
+    savePlaylistBtn.addEventListener('click', async () => {
+      if (!_lastRewindData || !_lastRewindData.top_tracks || !_lastRewindData.top_tracks.length) {
+        notify('⚠️ No tracks found in Weekly Rewind to save.');
+        return;
+      }
+      if (typeof window.saveMixAsPlaylist === 'function') {
+        await window.saveMixAsPlaylist(`Rewind: ${_lastRewindData.timeframe || 'Weekly Mix'}`, _lastRewindData.top_tracks);
+      }
+    });
+  }
+
   // Share Summary (Copy to clipboard)
   const copyBtn = document.getElementById('rewind-copy-summary-btn');
   if (copyBtn) {
@@ -328,9 +343,18 @@ function exportRewindVisualCard(d) {
   ctx.font = '20px -apple-system, sans-serif';
   ctx.fillText('Linus Music Player · High-Fidelity Aesthetic Audio Space', 72, 1260);
 
-  // Trigger Download
-  canvas.toBlob(blob => {
+  // Trigger Download & Clipboard
+  canvas.toBlob(async blob => {
     if (!blob) return;
+    let copied = false;
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        copied = true;
+      } catch (e) {
+        console.warn('Clipboard image write failed, falling back to download:', e);
+      }
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -340,10 +364,234 @@ function exportRewindVisualCard(d) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     if (typeof notify === 'function') {
-      notify('📸 Exported high-res Weekly Rewind card!');
+      if (copied) {
+        notify('📸 Exported high-res Rewind Card & copied to clipboard!');
+      } else {
+        notify('📸 Exported high-res Weekly Rewind card!');
+      }
     }
   }, 'image/png');
 }
+
+/**
+ * Renders and exports a high-resolution 1080x1350 Sonic DNA listening card
+ * with glowing ambient gradients, listener persona, day streak, soundscapes breakdown,
+ * top artists, and copies the image to clipboard while triggering a PNG download.
+ */
+function exportSonicDnaCard(tasteSummary, topArtist) {
+  tasteSummary = tasteSummary || window._currentTasteSummary;
+  topArtist = topArtist || window._currentTopArtist;
+  if (!tasteSummary) {
+    if (typeof notify === 'function') notify('Please wait for your taste profile to load...');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1350;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const streak = tasteSummary.listening_streak_days || 1;
+  const hours = tasteSummary.total_listen_hours || 0.0;
+  const vibe = tasteSummary.sonic_vibe_badge || '✨ Serene Music Voyager';
+  const genres = tasteSummary.top_genres_breakdown || [];
+  const discoveryScore = tasteSummary.discovery_score || 0;
+  const artistsDetail = tasteSummary.top_artists_detail || [];
+  const primaryArtist = topArtist || (tasteSummary.top_artists && tasteSummary.top_artists[0]) || 'Explorer';
+
+  // 1. Velvet Dark Obsidian Background
+  ctx.fillStyle = '#0a0808';
+  ctx.fillRect(0, 0, 1080, 1350);
+
+  // 2. Ambient High-Fidelity Glows
+  const glowGold = ctx.createRadialGradient(260, 260, 20, 260, 260, 480);
+  glowGold.addColorStop(0, 'rgba(229, 169, 93, 0.30)');
+  glowGold.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowGold;
+  ctx.fillRect(0, 0, 1080, 1350);
+
+  const glowViolet = ctx.createRadialGradient(840, 960, 30, 840, 960, 520);
+  glowViolet.addColorStop(0, 'rgba(168, 85, 247, 0.22)');
+  glowViolet.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowViolet;
+  ctx.fillRect(0, 0, 1080, 1350);
+
+  const glowCenter = ctx.createRadialGradient(540, 680, 50, 540, 680, 480);
+  glowCenter.addColorStop(0, 'rgba(245, 158, 11, 0.06)');
+  glowCenter.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowCenter;
+  ctx.fillRect(0, 0, 1080, 1350);
+
+  // 3. Specular Border Frame
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(36, 36, 1008, 1278);
+
+  // 4. Header Branding
+  ctx.fillStyle = '#e5a95d';
+  ctx.font = 'bold 22px -apple-system, sans-serif';
+  ctx.letterSpacing = '3px';
+  ctx.fillText('LINUS · SONIC DNA PROFILE', 72, 105);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.font = '19px -apple-system, sans-serif';
+  ctx.letterSpacing = '1px';
+  const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  ctx.fillText(`AUTHENTIC TASTE PASSPORT · ${todayStr.toUpperCase()}`, 72, 138);
+
+  // 5. Hero Persona Section Card
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.fillRect(72, 175, 936, 230);
+  ctx.strokeStyle = 'rgba(229, 169, 93, 0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(72, 175, 936, 230);
+
+  // Vibe Pill Box
+  ctx.fillStyle = 'rgba(229, 169, 93, 0.15)';
+  ctx.fillRect(100, 205, 380, 42);
+  ctx.strokeStyle = 'rgba(229, 169, 93, 0.4)';
+  ctx.strokeRect(100, 205, 380, 42);
+
+  ctx.fillStyle = '#fdf6ec';
+  ctx.font = 'bold 20px -apple-system, sans-serif';
+  ctx.fillText(vibe, 118, 234);
+
+  // Hero Title & Description
+  ctx.fillStyle = '#fdf6ec';
+  ctx.font = 'bold 44px "Instrument Serif", Georgia, serif';
+  ctx.fillText('Your Sonic Identity', 100, 310);
+
+  ctx.fillStyle = '#9e8d7c';
+  ctx.font = '22px -apple-system, sans-serif';
+  ctx.fillText('Sonic Archetype shaped by your real listening history and flow.', 100, 355);
+
+  // 6. Metrics Grid (4 tiles)
+  const metrics = [
+    { label: 'Listening Streak', val: `${streak} Days`, icon: '🔥' },
+    { label: 'Total Audio Time', val: `${hours}h`, icon: '⏳' },
+    { label: 'Discovery Ratio', val: `${discoveryScore}% Explored`, icon: '🧭' },
+    { label: 'Top Artist', val: primaryArtist.length > 14 ? primaryArtist.slice(0, 13) + '…' : primaryArtist, icon: '⭐' }
+  ];
+
+  metrics.forEach((m, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = 72 + col * (456 + 24);
+    const y = 435 + row * (130 + 16);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+    ctx.fillRect(x, y, 456, 130);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
+    ctx.strokeRect(x, y, 456, 130);
+
+    ctx.fillStyle = '#e5a95d';
+    ctx.font = 'bold 36px -apple-system, sans-serif';
+    ctx.fillText(`${m.icon} ${m.val}`, x + 28, y + 60);
+
+    ctx.fillStyle = '#9e8d7c';
+    ctx.font = '19px -apple-system, sans-serif';
+    ctx.fillText(m.label.toUpperCase(), x + 30, y + 100);
+  });
+
+  // 7. Top Soundscapes Breakdown
+  ctx.fillStyle = '#fdf6ec';
+  ctx.font = 'bold 26px -apple-system, sans-serif';
+  ctx.fillText('TOP SOUNDSCAPES & VIBES', 72, 760);
+
+  const displayGenres = genres.length > 0 ? genres.slice(0, 4) : [
+    { name: 'Discovery & Ambient', percent: 65 },
+    { name: 'Acoustic & Flow', percent: 35 }
+  ];
+
+  displayGenres.forEach((g, i) => {
+    const y = 805 + i * 55;
+    ctx.fillStyle = '#fdf6ec';
+    ctx.font = 'bold 20px -apple-system, sans-serif';
+    ctx.fillText(g.name, 72, y);
+
+    ctx.fillStyle = '#e5a95d';
+    ctx.font = 'bold 20px monospace';
+    ctx.fillText(`${g.percent}%`, 480, y);
+
+    // Track
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect(560, y - 16, 448, 18);
+
+    // Fill
+    const barWidth = Math.max(12, (g.percent / 100) * 448);
+    const grad = ctx.createLinearGradient(560, y, 560 + barWidth, y);
+    grad.addColorStop(0, '#e5a95d');
+    grad.addColorStop(1, '#f59e0b');
+    ctx.fillStyle = grad;
+    ctx.fillRect(560, y - 16, barWidth, 18);
+  });
+
+  // 8. Top Artists Rotation
+  ctx.fillStyle = '#fdf6ec';
+  ctx.font = 'bold 26px -apple-system, sans-serif';
+  ctx.fillText('TOP ARTISTS IN ROTATION', 72, 1055);
+
+  const topDisplayArtists = artistsDetail.length > 0 
+    ? artistsDetail.slice(0, 3) 
+    : (tasteSummary.top_artists || []).slice(0, 3).map(a => ({ name: a, play_count: 1 }));
+
+  topDisplayArtists.forEach((a, i) => {
+    const y = 1105 + i * 50;
+    ctx.fillStyle = '#e5a95d';
+    ctx.font = 'bold 22px -apple-system, sans-serif';
+    ctx.fillText(`#${i + 1}`, 72, y);
+
+    ctx.fillStyle = '#fdf6ec';
+    ctx.font = 'bold 21px -apple-system, sans-serif';
+    const artistName = (a.name || 'Artist').length > 30 ? (a.name || 'Artist').slice(0, 28) + '…' : (a.name || 'Artist');
+    ctx.fillText(artistName, 120, y);
+
+    if (a.play_count) {
+      ctx.fillStyle = '#9e8d7c';
+      ctx.font = '19px -apple-system, sans-serif';
+      ctx.fillText(`${a.play_count} plays`, 880, y);
+    }
+  });
+
+  // 9. Footer Watermark
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.font = '19px -apple-system, sans-serif';
+  ctx.fillText('Linus Music Player · High-Fidelity Aesthetic Audio Space', 72, 1275);
+
+  // Trigger export + clipboard
+  canvas.toBlob(async blob => {
+    if (!blob) return;
+    let copied = false;
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        copied = true;
+      } catch (e) {
+        console.warn('Clipboard image write failed, falling back to download:', e);
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `linus-sonic-dna-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    if (typeof notify === 'function') {
+      if (copied) {
+        notify('📸 Downloaded Sonic DNA Card & copied image to clipboard!');
+      } else {
+        notify('📸 Downloaded high-resolution Sonic DNA Card!');
+      }
+    }
+  }, 'image/png');
+}
+
+window.exportSonicDnaCard = exportSonicDnaCard;
 
 // ============================================================================
 // 🔥 Feature 8: Daily Listening Streak & Music Calendar Heatmap Engine
@@ -880,6 +1128,32 @@ function initVibeCompass() {
     });
   }
 
+  // Save Vibe Mix to Playlist Button
+  const vibeSaveBtn = document.getElementById('vibe-save-mix-btn');
+  if (vibeSaveBtn && !vibeSaveBtn._vibeBound) {
+    vibeSaveBtn._vibeBound = true;
+    vibeSaveBtn.addEventListener('click', async () => {
+      vibeSaveBtn.disabled = true;
+      vibeSaveBtn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> <span>Saving...</span>';
+      try {
+        const res = await api(`/api/vibe/tracks?x=${_vibeTargetX}&y=${_vibeTargetY}&limit=15`);
+        if (res && res.status === 'success' && res.tracks && res.tracks.length > 0) {
+          if (typeof window.saveMixAsPlaylist === 'function') {
+            await window.saveMixAsPlaylist(`Vibe: ${_activeVibeTitle}`, res.tracks);
+          }
+        } else {
+          notify('⚠️ No tracks found for this mood to save.');
+        }
+      } catch (err) {
+        console.error('Error saving vibe mix as playlist:', err);
+        notify('⚠️ Error generating vibe mix for playlist.');
+      } finally {
+        vibeSaveBtn.disabled = false;
+        vibeSaveBtn.innerHTML = '<i class="ph-bold ph-folder-simple-plus"></i> <span>Save Mix</span>';
+      }
+    });
+  }
+
   // Initial Coordinates
   setVibeCoordinates(0.0, 0.0, false);
 }
@@ -929,6 +1203,160 @@ function initMoodFilterChips() {
   });
 }
 
+// ============================================================================
+// 🌅 Soundtrack of Your Day — Circadian Time Capsule Card Renderer
+// ============================================================================
+let _activeCircadianCapsule = null;
+
+function renderCircadianCapsule(capsule) {
+  if (!capsule || !capsule.title) return;
+  _activeCircadianCapsule = capsule;
+
+  const card = document.getElementById('circadian-capsule-card');
+  const inner = document.getElementById('circadian-capsule-inner');
+  const glow = document.getElementById('circadian-capsule-glow');
+  const phaseLabel = document.getElementById('circadian-phase-label');
+  const phaseIcon = document.getElementById('circadian-phase-icon');
+  const clockVal = document.getElementById('circadian-clock-val');
+  const titleEl = document.getElementById('circadian-title');
+  const subEl = document.getElementById('circadian-subtitle');
+  const countEl = document.getElementById('circadian-track-count');
+  const avatarStack = document.getElementById('circadian-avatar-stack');
+  const playBtn = document.getElementById('circadian-play-btn');
+
+  if (!card) return;
+
+  if (titleEl) titleEl.textContent = capsule.title;
+  if (subEl) subEl.textContent = capsule.subtitle;
+  if (phaseLabel) phaseLabel.textContent = `${(capsule.period || 'current').toUpperCase()} RHYTHM`;
+  if (phaseIcon) phaseIcon.className = `ph-fill ${capsule.icon || 'ph-sun-horizon'}`;
+  if (clockVal) clockVal.textContent = capsule.hour_label || 'Current Flow';
+  if (countEl) countEl.textContent = `${capsule.track_count || (capsule.tracks ? capsule.tracks.length : 15)} Tracks · ${capsule.total_minutes || 45} min`;
+
+  if (inner && capsule.gradient) {
+    inner.style.background = capsule.gradient;
+    if (capsule.border_color) inner.style.borderColor = capsule.border_color;
+  }
+  if (glow && capsule.accent_color) {
+    glow.style.background = capsule.accent_color;
+  }
+  if (playBtn && capsule.accent_color) {
+    playBtn.style.background = capsule.accent_color;
+    playBtn.style.boxShadow = `0 4px 16px ${capsule.accent_color}55`;
+  }
+
+  // Thumbnails avatar stack
+  if (avatarStack && Array.isArray(capsule.tracks)) {
+    const previewTracks = capsule.tracks.filter(t => t && (t.artwork_url || t.thumbnail)).slice(0, 4);
+    if (previewTracks.length > 0) {
+      avatarStack.innerHTML = previewTracks.map(t => {
+        const art = t.artwork_url || t.thumbnail;
+        return `<img src="${escapeHtml(art)}" alt="${escapeHtml(t.title || '')}" title="${escapeHtml(t.title || '')}" loading="lazy" onerror="this.remove()">`;
+      }).join('');
+    } else {
+      avatarStack.innerHTML = '';
+    }
+  }
+
+  // Bind play action once
+  if (playBtn && !playBtn._circadianBound) {
+    playBtn._circadianBound = true;
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playCircadianCapsule(_activeCircadianCapsule);
+    });
+  }
+
+  // Bind save mix as playlist action
+  const saveBtn = document.getElementById('circadian-save-btn');
+  if (saveBtn && !saveBtn._circadianBound) {
+    saveBtn._circadianBound = true;
+    saveBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!_activeCircadianCapsule || !_activeCircadianCapsule.tracks || !_activeCircadianCapsule.tracks.length) {
+        notify('⚠️ No tracks available in this time capsule.');
+        return;
+      }
+      if (typeof window.saveMixAsPlaylist === 'function') {
+        await window.saveMixAsPlaylist(_activeCircadianCapsule.title, _activeCircadianCapsule.tracks);
+      }
+    });
+  }
+
+  card.style.display = 'block';
+}
+
+async function playCircadianCapsule(capsule) {
+  if (!capsule || !capsule.tracks || !capsule.tracks.length) {
+    notify('⚠️ No tracks available in this time capsule.');
+    return;
+  }
+  const tracks = capsule.tracks;
+  queue = tracks.map(t => ({ ...t, isUserQueued: false }));
+  currentIndex = 0;
+  renderQueue();
+  debouncedSaveQueue();
+
+  const first = tracks[0];
+  if (first.is_online && first.video_id) {
+    streamYouTubeAudio(first.video_id, first.title, first.artist, first.artwork_url, first.duration);
+  } else if (first.id) {
+    playById(first.id);
+  }
+  populate25SongQueue();
+  notify(`🌅 Tuned into ${capsule.title} (${tracks.length} tracks queued)!`);
+}
+
+/**
+ * 1-Click Saves any auto-generated mix (Circadian, Daily Capsules, Vibe Mix, Rewind)
+ * to the user's permanent playlists in SQLite & local state.
+ */
+async function saveMixAsPlaylist(defaultName, tracks) {
+  if (!tracks || !tracks.length) {
+    if (typeof notify === 'function') notify('⚠️ No tracks available in this mix to save.');
+    return null;
+  }
+  try {
+    const res = await api('/api/playlists/save-mix', {
+      method: 'POST',
+      body: JSON.stringify({ name: defaultName, tracks: tracks })
+    });
+    if (res && res.status === 'success') {
+      if (typeof state !== 'undefined') {
+        if (!state.playlists) state.playlists = {};
+        state.playlists[res.playlist_name] = res.track_ids;
+      }
+      if (typeof renderPlaylists === 'function') renderPlaylists();
+      if (typeof notify === 'function') {
+        notify(`💾 Saved "${res.playlist_name}" (${res.track_count} tracks) to your Playlists!`);
+      }
+      return res.playlist_name;
+    } else {
+      if (typeof notify === 'function') {
+        notify(`⚠️ ${res && res.message ? res.message : 'Could not save mix as playlist.'}`);
+      }
+      return null;
+    }
+  } catch (err) {
+    console.error('Error saving mix to playlist:', err);
+    if (typeof state !== 'undefined') {
+      if (!state.playlists) state.playlists = {};
+      const tName = defaultName || 'Curated Mix';
+      const tIds = tracks.map(t => (typeof t === 'string' ? t : t.id)).filter(Boolean);
+      state.playlists[tName] = tIds;
+      if (typeof saveState === 'function') await saveState();
+      if (typeof renderPlaylists === 'function') renderPlaylists();
+      if (typeof notify === 'function') notify(`💾 Saved "${tName}" to your Playlists!`);
+      return tName;
+    }
+    return null;
+  }
+}
+
+window.renderCircadianCapsule = renderCircadianCapsule;
+window.playCircadianCapsule = playCircadianCapsule;
+window.saveMixAsPlaylist = saveMixAsPlaylist;
+
 /**
  * Main dashboard loader. Fetches /api/recommend/dashboard and renders all shelves.
  * @param {boolean} forceRefresh — bypasses the 5-minute server-side cache
@@ -970,6 +1398,9 @@ async function loadDashboardRecommendations(forceRefresh = false) {
     if (data.daily_capsules && data.daily_capsules.length > 0) {
       if (typeof renderDailyCapsules === 'function') renderDailyCapsules(data.daily_capsules);
       else if (typeof window.renderDailyCapsules === 'function') window.renderDailyCapsules(data.daily_capsules);
+    }
+    if (data.circadian_capsule) {
+      renderCircadianCapsule(data.circadian_capsule);
     }
 
     // Update taste profile banner & Sonic DNA
@@ -1058,6 +1489,9 @@ async function loadDashboardRecommendations(forceRefresh = false) {
             if (fullData.daily_capsules && fullData.daily_capsules.length > 0) {
               if (typeof renderDailyCapsules === 'function') renderDailyCapsules(fullData.daily_capsules);
               else if (typeof window.renderDailyCapsules === 'function') window.renderDailyCapsules(fullData.daily_capsules);
+            }
+            if (fullData.circadian_capsule) {
+              renderCircadianCapsule(fullData.circadian_capsule);
             }
             if (fullData.taste_summary) {
               if (typeof renderSonicDnaCard === 'function') renderSonicDnaCard(fullData.taste_summary, fullData.top_artist);
@@ -1161,6 +1595,7 @@ function renderDashboardUpNext() {
         <div class="up-next-info">
           <span class="up-next-title" title="${escapeHtml(t.title || '')}">${escapeHtml(t.title || 'Unknown')}</span>
           <span class="up-next-artist">${escapeHtml(t.artist || '')}</span>
+          ${t.rec_reason ? `<span class="up-next-reason" style="font-size:9.5px;color:var(--accent);display:inline-flex;align-items:center;gap:3px;margin-top:2px;font-weight:600;"><i class="ph-fill ph-sparkle"></i> ${escapeHtml(t.rec_reason)}</span>` : ''}
         </div>
         <div class="up-next-more">
           <i class="ph-fill ph-play-circle"></i>

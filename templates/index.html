@@ -39,9 +39,11 @@
   <canvas id="live-motion-canvas" class="live-wallpaper-video hidden"></canvas>
   <!-- Live Video Wallpaper Engine -->
   <video id="live-wallpaper-video" class="live-wallpaper-video hidden" loop muted playsinline autoplay></video>
-  <!-- Custom Photo Wallpaper Engine & Folder Slideshow (Dual-Buffer Smooth Crossfade) -->
-  <div id="custom-wallpaper-bg" class="custom-wallpaper-bg hidden"></div>
-  <div id="custom-wallpaper-bg-2" class="custom-wallpaper-bg hidden" style="opacity:0;"></div>
+  <!-- Custom Photo Wallpaper Engine & Slideshow Crossfade Layers -->
+  <div id="custom-wallpaper-bg" class="custom-wallpaper-bg hidden">
+    <div id="wp-crossfade-a" class="wp-crossfade-layer active"></div>
+    <div id="wp-crossfade-b" class="wp-crossfade-layer"></div>
+  </div>
   <!-- Dynamic Dim Overlay -->
   <div id="wallpaper-dim-overlay" class="wallpaper-dim-overlay"></div>
   <div id="vibe-confetti-container" class="vibe-confetti-container"></div>
@@ -69,6 +71,7 @@
 
   {% include 'components/player_bar.html' %}
   {% include 'components/queue_drawer.html' %}
+  {% include 'components/mini_lyrics_drawer.html' %}
 
   <!-- Native Mobile Bottom Navigation Bar (Apple Music / Spotify Style) -->
   <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile Navigation">

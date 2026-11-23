@@ -61,36 +61,92 @@ def find_cookie_file() -> Path | None:
     return None
 
 
+def find_ffmpeg_dir() -> Path | None:
+    r"""
+    Search for FFmpeg binary directory in priority order:
+    1. Environment variable FFMPEG_LOCATION or FFMPEG_PATH
+    2. Bundled in project: ROOT_DIR / "ffmpeg-9.0.2-full_build" / "bin"
+    3. Bundled in project: ROOT_DIR / "ffmpeg" / "bin" or ROOT_DIR / "bin"
+    4. Sibling project location: Path(r"D:\projects\clips\ffmpeg-9.0.2-full_build\bin")
+    5. System PATH check via shutil.which("ffmpeg")
+    """
+    import os
+    import shutil
+
+    env_loc = os.environ.get("FFMPEG_LOCATION") or os.environ.get("FFMPEG_PATH")
+    if env_loc:
+        p = Path(env_loc)
+        if not p.is_absolute():
+            p = ROOT_DIR / p
+        if p.is_file() and p.name.lower().startswith("ffmpeg"):
+            return p.parent
+        if p.is_dir():
+            if (p / "ffmpeg.exe").is_file() or (p / "ffmpeg").is_file():
+                return p
+            if (p / "bin" / "ffmpeg.exe").is_file():
+                return p / "bin"
+
+    candidates = [
+        ROOT_DIR / "ffmpeg-9.0.2-full_build" / "bin",
+        ROOT_DIR / "ffmpeg" / "bin",
+        ROOT_DIR / "bin",
+        ROOT_DIR / "ffmpeg-9.0.2-full_build",
+    ]
+    for c in candidates:
+        if (c / "ffmpeg.exe").is_file() or (c / "ffmpeg").is_file():
+            return c
+
+    sys_ffmpeg = shutil.which("ffmpeg")
+    if sys_ffmpeg:
+        return Path(sys_ffmpeg).parent
+
+    return None
+
+
+def setup_ffmpeg_env() -> str | None:
+    """Ensure FFmpeg bin directory is in os.environ['PATH'] so all subprocesses find it."""
+    import os
+    f_dir = find_ffmpeg_dir()
+    if f_dir and f_dir.is_dir():
+        f_dir_str = str(f_dir)
+        cur_path = os.environ.get("PATH", "")
+        if f_dir_str not in cur_path.split(os.pathsep):
+            os.environ["PATH"] = f_dir_str + os.pathsep + cur_path
+        os.environ["FFMPEG_LOCATION"] = f_dir_str
+        return f_dir_str
+    return None
+
+
+_FFMPEG_DIR = setup_ffmpeg_env()
+
+
 def get_youtube_base_opts(clients: list[str] | None = None) -> dict:
     """
-    Common options for all yt-dlp YouTube interactions to bypass bot-detection:
+    Common options for all yt-dlp YouTube interactions:
     - Node.js JS runtime for JS challenge solving
     - EJS component for signature deciphering
-    - extractor_args with resilient player_client fallback order
     - Automatic cookie file detection (cookies.txt)
+    - Full FFmpeg integration for best-quality video+audio merging
     """
     import os
     cookie_path = find_cookie_file()
-
-    # If cookies are provided, web client is safest & delivers highest bitrate.
-    # If no cookies, mobile clients (android, ios) bypass bot-check restrictions.
-    if clients is None:
-        if cookie_path:
-            clients = ["web", "android", "ios"]
-        else:
-            clients = ["android", "ios", "web"]
 
     opts = {
         "source_address": "0.0.0.0",
         "js_runtimes": {"node": {}},
         "remote_components": ["ejs:github"],
-        "extractor_args": {
+    }
+
+    if clients is not None:
+        opts["extractor_args"] = {
             "youtube": {
                 "player_client": clients,
-                "player_skip": ["configs"],
             }
-        },
-    }
+        }
+
+    f_dir = _FFMPEG_DIR or setup_ffmpeg_env()
+    if f_dir:
+        opts["ffmpeg_location"] = f_dir
 
     if cookie_path:
         opts["cookiefile"] = str(cookie_path)
@@ -259,12 +315,14 @@ def _build_audio_opts(job_id: str, fmt: str, quality: str) -> dict:
 
     # embed thumbnail as cover art for mp3 / m4a
     if fmt in {"mp3", "m4a"}:
+        postprocessors.append({"key": "FFmpegThumbnailsConvertor", "format": "jpg"})
         postprocessors.append({"key": "EmbedThumbnail"})
         postprocessors.append({"key": "FFmpegMetadata", "add_metadata": True})
 
     opts = get_youtube_base_opts()
     opts.update({
         "format":               "bestaudio/best",
+        "format_sort":          ["abr", "acodec", "size"],
         "outtmpl":              str(DOWNLOADS_DIR / "%(title)s.%(ext)s"),
         "writethumbnail":       fmt in {"mp3", "m4a"},
         "postprocessors":       postprocessors,
@@ -291,21 +349,29 @@ def _build_video_opts(job_id: str, fmt: str, height: str) -> dict:
     DOWNLOADS_DIR.mkdir(exist_ok=True)
 
     if height == "best":
-        fmt_selector = f"bestvideo[ext={fmt}]+bestaudio/bestvideo+bestaudio/best"
+        fmt_selector = "bestvideo*+bestaudio/best"
     else:
         fmt_selector = (
-            f"bestvideo[height<={height}][ext={fmt}]+bestaudio"
-            f"/bestvideo[height<={height}]+bestaudio"
+            f"bestvideo*[height<={height}]+bestaudio"
             f"/best[height<={height}]"
             f"/best"
         )
 
+    postprocessors = [
+        {"key": "FFmpegThumbnailsConvertor", "format": "jpg"},
+        {"key": "FFmpegMetadata", "add_metadata": True},
+    ]
+    if fmt in {"mp4", "mkv", "webm"}:
+        postprocessors.append({"key": "EmbedThumbnail", "already_have_thumbnail": False})
+
     opts = get_youtube_base_opts()
     opts.update({
         "format":               fmt_selector,
+        "format_sort":          ["res", "fps", "tbr", "size", "br"],
         "outtmpl":              str(DOWNLOADS_DIR / "%(title)s.%(ext)s"),
         "merge_output_format":  fmt,
-        "postprocessors":       [{"key": "FFmpegMetadata", "add_metadata": True}],
+        "writethumbnail":       True,
+        "postprocessors":       postprocessors,
         "progress_hooks":       [_make_progress_hook(job_id)],
         "postprocessor_hooks":  [_safe_title_hook(job_id)],
         "quiet":                True,
@@ -383,7 +449,7 @@ def start_download(url: str, opts: dict) -> str:
 
     if media_type == "video":
         fmt      = fmt if fmt in VIDEO_FORMATS else "mp4"
-        height   = quality if quality in VIDEO_HEIGHTS else "720"
+        height   = quality if quality in VIDEO_HEIGHTS else "best"
         ydl_opts = _build_video_opts(job_id, fmt, height)
     else:
         fmt      = fmt if fmt in AUDIO_FORMATS else "mp3"
@@ -958,7 +1024,7 @@ def extract_video_stream_url(video_id: str, force_refresh: bool = False) -> dict
 
     strategies = [
         lambda: {
-            **get_youtube_base_opts(),
+            **get_youtube_base_opts(clients=["android"]),
             "format": "best[ext=mp4][height<=1080]/best[ext=mp4]/best[height<=1080]/best",
             "quiet": True,
             "no_warnings": True,

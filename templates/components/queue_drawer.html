@@ -6,6 +6,18 @@
       </div>
       <button class="round-action" id="queue-close" title="Close Queue"><i class="ph ph-x"></i></button>
     </div>
+    <!-- Discovery Dial: Familiar vs. Explorer Queue Tuning -->
+    <div class="discovery-dial-wrap" style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:4px 6px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-muted);padding-left:4px;">
+        <i class="ph-bold ph-sliders-horizontal" style="color:var(--accent);"></i>
+        <span>Aura:</span>
+      </div>
+      <div class="discovery-dial-chips" style="display:flex;gap:3px;" id="discovery-dial-chips">
+        <button class="discovery-chip" data-mode="comfort" title="Comfort Zone: 80% your favorites & loved songs" style="background:transparent;border:none;color:var(--text-muted);padding:4px 8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s ease;">🛋️ Cozy</button>
+        <button class="discovery-chip active" data-mode="balanced" title="Balanced Flow: Perfect 50/50 mix of familiar & discovery" style="background:rgba(212,176,122,0.18);border:none;color:var(--accent);padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">⚖️ Balanced</button>
+        <button class="discovery-chip" data-mode="discovery" title="Deep Explorer: 80% fresh discoveries & new artists" style="background:transparent;border:none;color:var(--text-muted);padding:4px 8px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s ease;">🧭 Explorer</button>
+      </div>
+    </div>
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
       <button class="btn-secondary" id="queue-shuffle-btn" style="flex:1;min-width:65px;padding:6px 8px;font-size:12px;" title="Smart Shuffle"><i class="ph ph-shuffle"></i> Shuffle</button>
       <button class="btn-secondary" id="queue-vibe-compass-btn" style="flex:1;min-width:60px;padding:6px 8px;font-size:12px;" title="Open 2D Vibe Compass"><i class="ph-bold ph-compass"></i> Vibe</button>

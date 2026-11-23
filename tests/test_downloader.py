@@ -187,5 +187,46 @@ class TestGetStreamCacheInfo(unittest.TestCase):
             self.assertIn(key, result, msg=f"Missing key: {key}")
 
 
+    def test_ffmpeg_detection_and_options(self):
+        """Verify find_ffmpeg_dir finds FFmpeg and injects ffmpeg_location into yt-dlp options."""
+        f_dir = downloader.find_ffmpeg_dir()
+        self.assertIsNotNone(f_dir)
+        opts = downloader.get_youtube_base_opts()
+        self.assertIn("ffmpeg_location", opts)
+        self.assertEqual(opts["ffmpeg_location"], str(f_dir))
+
+    def test_build_video_opts_max_quality_and_metadata(self):
+        """Verify video opts prioritize bestvideo*+bestaudio without format gating and include thumbnail/metadata."""
+        opts = downloader._build_video_opts("job_123", "mp4", "best")
+        self.assertEqual(opts["format"], "bestvideo*+bestaudio/best")
+        self.assertEqual(opts["format_sort"], ["res", "fps", "tbr", "size", "br"])
+        self.assertEqual(opts["merge_output_format"], "mp4")
+        self.assertTrue(opts["writethumbnail"])
+
+        # Check postprocessors
+        pp_keys = [pp["key"] for pp in opts["postprocessors"]]
+        self.assertIn("FFmpegThumbnailsConvertor", pp_keys)
+        self.assertIn("FFmpegMetadata", pp_keys)
+        self.assertIn("EmbedThumbnail", pp_keys)
+
+    def test_build_video_opts_height_cap(self):
+        """Verify height constrained video opts include bestvideo* with height constraint."""
+        opts = downloader._build_video_opts("job_456", "mkv", "1080")
+        self.assertIn("bestvideo*[height<=1080]+bestaudio", opts["format"])
+        self.assertEqual(opts["format_sort"], ["res", "fps", "tbr", "size", "br"])
+        self.assertEqual(opts["merge_output_format"], "mkv")
+        self.assertTrue(opts["writethumbnail"])
+
+    def test_build_audio_opts_thumbnail_convertor(self):
+        """Verify audio mp3 options convert thumbnails to jpg before embedding."""
+        opts = downloader._build_audio_opts("job_789", "mp3", "320")
+        self.assertEqual(opts["format_sort"], ["abr", "acodec", "size"])
+        self.assertTrue(opts["writethumbnail"])
+        pp_keys = [pp["key"] for pp in opts["postprocessors"]]
+        self.assertIn("FFmpegThumbnailsConvertor", pp_keys)
+        self.assertIn("EmbedThumbnail", pp_keys)
+        self.assertIn("FFmpegMetadata", pp_keys)
+
+
 if __name__ == "__main__":
     unittest.main()

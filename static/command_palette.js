@@ -340,7 +340,40 @@
       icon: 'ph-fill ph-paint-brush-broad',
       color: '#e5a95d',
       badge: 'Customize',
-      action: () => $('#theme-studio-sheet')?.showModal()
+      action: () => (window.openStudioCustomizer ? window.openStudioCustomizer() : $('#theme-studio-sheet')?.showModal())
+    },
+    {
+      id: 'act-next-wallpaper',
+      category: 'actions',
+      title: 'Next Folder Wallpaper',
+      subtitle: 'Advance background to next image in folder slideshow (Alt+W)',
+      icon: 'ph-bold ph-image',
+      color: '#e5a95d',
+      badge: 'Wallpaper',
+      action: () => {
+        if (window.linusWallpaperFolder && window.linusWallpaperFolder.advanceNext) {
+          window.linusWallpaperFolder.advanceNext(true);
+        } else {
+          window.showToast?.('Folder slideshow not active. Select a wallpaper folder in Theme Studio.');
+        }
+      }
+    },
+    {
+      id: 'act-folder-wallpaper',
+      category: 'actions',
+      title: 'Select Wallpaper Folder Slideshow',
+      subtitle: 'Cycle through a PC folder of wallpapers with smooth crossfade & music sync',
+      icon: 'ph-bold ph-folder-open',
+      color: '#e5a95d',
+      badge: 'Theme',
+      action: () => {
+        if (window.linusWallpaperFolder && window.linusWallpaperFolder.openFolderPicker) {
+          window.linusWallpaperFolder.openFolderPicker();
+        } else {
+          $('#theme-studio-sheet')?.showModal();
+          $('#pill-subfolder-slideshow')?.click();
+        }
+      }
     },
     {
       id: 'act-gallery',
@@ -351,49 +384,6 @@
       color: '#818cf8',
       badge: 'Gallery',
       action: () => window.openWallpaperGallery?.('main')
-    },
-    {
-      id: 'act-wallpaper-folder',
-      category: 'actions',
-      title: 'Choose Wallpaper Folder (Slideshow)',
-      subtitle: 'Select a PC directory of photos to rotate background wallpapers with music sync',
-      icon: 'ph-fill ph-folder-open',
-      color: '#e5a95d',
-      badge: 'Wallpaper',
-      action: () => {
-        $('#theme-studio-sheet')?.showModal();
-        setTimeout(() => $('#btn-pick-wallpaper-folder')?.click(), 250);
-      }
-    },
-    {
-      id: 'act-wallpaper-folder-next',
-      category: 'actions',
-      title: 'Next Wallpaper Photo (Folder Slideshow)',
-      subtitle: 'Switch to the next photo in your background wallpaper folder',
-      icon: 'ph-bold ph-caret-right',
-      color: '#e5a95d',
-      badge: 'Wallpaper',
-      action: () => window.FolderWallpaperEngine?.nextImage(true)
-    },
-    {
-      id: 'act-wallpaper-folder-prev',
-      category: 'actions',
-      title: 'Previous Wallpaper Photo (Folder Slideshow)',
-      subtitle: 'Switch to the previous photo in your background wallpaper folder',
-      icon: 'ph-bold ph-caret-left',
-      color: '#e5a95d',
-      badge: 'Wallpaper',
-      action: () => window.FolderWallpaperEngine?.prevImage(true)
-    },
-    {
-      id: 'act-wallpaper-folder-pause',
-      category: 'actions',
-      title: 'Toggle Wallpaper Slideshow (Play / Pause)',
-      subtitle: 'Pause or resume automatic rotation of background photos',
-      icon: 'ph-bold ph-pause',
-      color: '#e5a95d',
-      badge: 'Wallpaper',
-      action: () => window.FolderWallpaperEngine?.togglePlayPause()
     },
     {
       id: 'act-rescan',

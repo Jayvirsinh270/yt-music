@@ -13,6 +13,24 @@
 
 // Hoisted theme state to prevent TDZ across scopes
 var fsTheme = null;
+var folderWallpaperItems = [];
+var currentFolderSlideIndex = 0;
+var folderSlideshowTimer = null;
+var shuffleHistory = [];
+var isSlideshowPaused = false;
+var activeCrossfadeLayerIsA = true;
+var lastObservedTrackSrc = null;
+
+var folderSlideshowConfig = {
+  folderName: '',
+  count: 0,
+  interval: '60', // 'track-only', '15', '30', '60', '180', '300', '600', '1800', '3600', 'manual'
+  changeOnTrack: true,
+  shuffle: true,
+  kenBurns: true,
+  transitionDuration: '1200',
+  fitMode: 'cover'
+};
 
 // ============================================================
 // Personalization Studio & Live Atmosphere Engine
@@ -224,9 +242,7 @@ function applyUserTheme(theme, save = true) {
   videoEl?.classList.add('hidden');
   fsVideoEl?.classList.add('hidden');
   customImgBg?.classList.add('hidden');
-  $('#custom-wallpaper-bg-2')?.classList.add('hidden');
   fsCustomImgBg?.classList.add('hidden');
-  $('#fs-custom-wallpaper-bg-2')?.classList.add('hidden');
 
   // Dynamic Dimming & Blur Overlay (Main Player)
   const dimVal = (userTheme.wallpaperDim ?? 40) / 100;
@@ -242,10 +258,6 @@ function applyUserTheme(theme, save = true) {
   if (userTheme.wallpaperType === 'aura') {
     auraCanvas?.classList.remove('hidden');
     resumeLivingAura();
-  } else if (userTheme.wallpaperType === 'folder-slideshow') {
-    if (window.FolderWallpaperEngine) {
-      window.FolderWallpaperEngine.showBuffers();
-    }
   } else if (STATIC_WALLPAPER_URLS[userTheme.wallpaperType]) {
     const imgUrl = STATIC_WALLPAPER_URLS[userTheme.wallpaperType];
     if (customImgBg) {
@@ -265,6 +277,16 @@ function applyUserTheme(theme, save = true) {
       fsCustomImgBg.style.backgroundImage = `url('${userTheme.customImageSrc}')`;
       fsCustomImgBg.classList.remove('hidden');
     }
+  } else if (userTheme.wallpaperType === 'folder-slideshow') {
+    if (customImgBg) {
+      customImgBg.style.backgroundImage = 'none';
+      customImgBg.classList.remove('hidden');
+    }
+    if (fsCustomImgBg) {
+      fsCustomImgBg.style.backgroundImage = 'none';
+      fsCustomImgBg.classList.remove('hidden');
+    }
+    startFolderSlideshowEngine();
   } else if (userTheme.wallpaperType === 'custom-video') {
     if (userTheme.customVideoSrc) {
       if (videoEl) {
@@ -315,12 +337,16 @@ function applyUserTheme(theme, save = true) {
     motionCanvasEl?.classList.remove('hidden');
     fsMotionCanvasEl?.classList.remove('hidden');
     startMotionAnimationLoop();
-  } else {
+  } else if (userTheme.wallpaperType !== 'folder-slideshow') {
     // Curated Procedural Live Atmosphere
     spawnParticlesForPreset(userTheme.wallpaperType);
     motionCanvasEl?.classList.remove('hidden');
     fsMotionCanvasEl?.classList.remove('hidden');
     startMotionAnimationLoop();
+  }
+
+  if (userTheme.wallpaperType !== 'folder-slideshow') {
+    stopFolderSlideshowEngine();
   }
 
   // Custom Vinyl Sticker
@@ -389,13 +415,21 @@ function syncStudioUI() {
 
   // Font presets
   document.querySelectorAll('.font-preset-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.font === userTheme.fontFamily);
+    btn.classList.toggle('active', btn.dataset?.font === userTheme.fontFamily);
   });
 
   // Wallpaper cards
   document.querySelectorAll('.wallpaper-card').forEach(card => {
-    card.classList.toggle('active', card.dataset.wp === userTheme.wallpaperType);
+    card.classList.toggle('active', card.dataset?.wp === userTheme.wallpaperType);
   });
+
+  // Folder Slideshow Studio UI Sync
+  if ($('#select-slideshow-interval')) $('#select-slideshow-interval').value = folderSlideshowConfig.interval || '60';
+  if ($('#toggle-slideshow-track-sync')) $('#toggle-slideshow-track-sync').checked = folderSlideshowConfig.changeOnTrack !== false;
+  if ($('#toggle-slideshow-kenburns')) $('#toggle-slideshow-kenburns').checked = folderSlideshowConfig.kenBurns !== false;
+  if ($('#select-slideshow-transition')) $('#select-slideshow-transition').value = folderSlideshowConfig.transitionDuration || '1200';
+  if ($('#btn-slideshow-shuffle')) $('#btn-slideshow-shuffle').classList.toggle('active', !!folderSlideshowConfig.shuffle);
+  if (typeof updateFolderUIStatus === 'function') updateFolderUIStatus();
 
   // Custom media boxes
   const mediaBox = $('#custom-media-box');
@@ -416,8 +450,23 @@ function syncStudioUI() {
 
 // Studio Modal Triggers
 function openStudioCustomizer() {
-  syncStudioUI();
-  $('#theme-studio-sheet')?.showModal();
+  try {
+    syncStudioUI();
+  } catch (err) {
+    console.warn('Error in syncStudioUI:', err);
+  }
+  const sheet = $('#theme-studio-sheet');
+  if (sheet && !sheet.open) {
+    if (typeof sheet.showModal === 'function') {
+      try {
+        sheet.showModal();
+      } catch (e) {
+        sheet.setAttribute('open', '');
+      }
+    } else {
+      sheet.setAttribute('open', '');
+    }
+  }
 }
 
 $('#open-studio-customizer-btn')?.addEventListener('click', () => {
@@ -727,615 +776,20 @@ async function loadWallpaperBlob(key) {
   });
 }
 
-// ============================================================
-// 📁 Windows-Style Wallpaper Folder Slideshow Engine (Enhanced Edition)
-// ============================================================
-const FolderWallpaperEngine = {
-  isActive: false,
-  folderName: '',
-  sourceType: 'browser-folder', // 'browser-folder' | 'local-path' | 'multi-file'
-  folderPath: '',
-  images: [], // array of { id, name, url, file, blob }
-  currentIndex: 0,
-  interval: 60, // 'song' or seconds (30, 60, 180, 300, 600, etc.)
-  shuffle: false,
-  shuffledIndices: [],
-  kenBurns: true,
-  isPaused: false,
-  timerId: null,
-  activeBufferIndex: 1,
-
-  async init() {
-    this.bindEvents();
-    await this.restoreFromStorage();
-  },
-
-  async restoreFromStorage() {
+async function deleteWallpaperBlob(key) {
+  const db = await openWallpaperDB();
+  if (!db) return false;
+  return new Promise((resolve) => {
     try {
-      const saved = localStorage.getItem('linus_wallpaper_folder_meta');
-      if (!saved) return;
-      const meta = JSON.parse(saved);
-      if (!meta || !meta.folderName) return;
-
-      this.folderName = meta.folderName || 'Wallpapers';
-      this.sourceType = meta.sourceType || 'browser-folder';
-      this.folderPath = meta.folderPath || '';
-      this.currentIndex = meta.currentIndex || 0;
-      this.interval = meta.interval !== undefined ? meta.interval : 60;
-      this.shuffle = !!meta.shuffle;
-      this.kenBurns = meta.kenBurns !== false;
-      this.isPaused = !!meta.isPaused;
-
-      this.syncControlsUI();
-
-      if (this.sourceType === 'local-path' && this.folderPath) {
-        await this.loadFromLocalPath(this.folderPath, false);
-      } else {
-        await this.loadFromIndexedDB(meta);
-      }
-    } catch (err) {
-      console.warn('Folder wallpaper restore error:', err);
+      const tx = db.transaction(WP_STORE_NAME, 'readwrite');
+      tx.objectStore(WP_STORE_NAME).delete(key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
     }
-  },
-
-  async loadFromIndexedDB(meta) {
-    const db = await openWallpaperDB();
-    if (!db) return;
-    const loadedImages = [];
-    const count = meta.count || 0;
-    const fileNames = meta.fileNames || [];
-
-    for (let i = 0; i < count; i++) {
-      try {
-        const blob = await loadWallpaperBlob('folder_img_' + i);
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          loadedImages.push({
-            id: i,
-            name: fileNames[i] || `photo_${i + 1}.jpg`,
-            url: url,
-            blob: blob
-          });
-        }
-      } catch (e) {
-        console.warn('Failed loading wallpaper blob', i, e);
-      }
-    }
-
-    if (loadedImages.length > 0) {
-      this.images = loadedImages;
-      this.isActive = true;
-      if (typeof userTheme !== 'undefined' && userTheme.wallpaperType === 'folder-slideshow') {
-        this.applyImage(this.currentIndex, false);
-        if (!this.isPaused && this.interval !== 'song') {
-          this.startTimer();
-        }
-      }
-      this.renderFilmstrip();
-      this.updateStatusUI();
-    }
-  },
-
-  async loadFromFiles(files, folderName = 'Wallpapers') {
-    if (!files || !files.length) return;
-    const validImages = Array.from(files).filter(f => 
-      (f.type && f.type.startsWith('image/')) || /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(f.name)
-    );
-
-    if (!validImages.length) {
-      notify('⚠️ No supported image files (.jpg, .png, .webp, .avif, .gif) found.');
-      return;
-    }
-
-    this.images.forEach(img => {
-      if (img.url && img.url.startsWith('blob:')) URL.revokeObjectURL(img.url);
-    });
-
-    this.folderName = folderName;
-    this.sourceType = 'browser-folder';
-    this.folderPath = '';
-    this.currentIndex = 0;
-    this.images = [];
-
-    for (let i = 0; i < validImages.length; i++) {
-      const file = validImages[i];
-      const url = URL.createObjectURL(file);
-      this.images.push({
-        id: i,
-        name: file.name,
-        url: url,
-        file: file
-      });
-      storeWallpaperBlob('folder_img_' + i, file).catch(() => {});
-    }
-
-    this.isActive = true;
-    this.isPaused = false;
-    userTheme.wallpaperType = 'folder-slideshow';
-    if (typeof fsTheme !== 'undefined' && fsTheme) fsTheme.wallpaperType = 'match-main';
-
-    this.saveMetadata();
-    this.applyImage(0, true);
-    this.renderFilmstrip();
-    this.updateStatusUI();
-    applyUserTheme(userTheme);
-    if (typeof applyFullscreenTheme === 'function') applyFullscreenTheme(fsTheme);
-
-    if (this.interval !== 'song') {
-      this.startTimer();
-    }
-
-    notify(`📁 Wallpaper Folder Loaded: ${folderName} (${this.images.length} photos)`);
-  },
-
-  async loadFromLocalPath(folderPath, autoApply = true) {
-    if (!folderPath || !folderPath.trim()) return;
-    try {
-      const res = await fetch('/api/wallpaper/scan-local-folder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder_path: folderPath.trim() })
-      });
-      const data = await res.json();
-      if (!res.ok || data.status !== 'success') {
-        notify(`⚠️ ${data.error || 'Could not scan local folder'}`);
-        return;
-      }
-
-      this.folderName = data.folder_name;
-      this.folderPath = data.folder_path;
-      this.sourceType = 'local-path';
-      this.currentIndex = Math.min(this.currentIndex, data.images.length - 1);
-      this.images = data.images.map((img, idx) => ({
-        id: idx,
-        name: img.name,
-        url: img.url,
-        path: img.path,
-        size: img.size
-      }));
-
-      this.isActive = true;
-      if (autoApply) {
-        this.isPaused = false;
-        userTheme.wallpaperType = 'folder-slideshow';
-        if (typeof fsTheme !== 'undefined' && fsTheme) fsTheme.wallpaperType = 'match-main';
-        this.applyImage(0, true);
-        applyUserTheme(userTheme);
-        if (typeof applyFullscreenTheme === 'function') applyFullscreenTheme(fsTheme);
-        if (this.interval !== 'song') {
-          this.startTimer();
-        }
-        notify(`📁 Local PC Folder Connected: ${this.folderName} (${data.count} photos)`);
-      } else if (userTheme.wallpaperType === 'folder-slideshow') {
-        this.applyImage(this.currentIndex, false);
-        if (!this.isPaused && this.interval !== 'song') {
-          this.startTimer();
-        }
-      }
-
-      this.saveMetadata();
-      this.renderFilmstrip();
-      this.updateStatusUI();
-    } catch (err) {
-      console.error('Scan local folder error:', err);
-      notify('⚠️ Failed to connect to local folder');
-    }
-  },
-
-  applyImage(index, animate = true) {
-    if (!this.images || !this.images.length) return;
-    if (index < 0) index = this.images.length - 1;
-    if (index >= this.images.length) index = 0;
-    this.currentIndex = index;
-
-    const img = this.images[this.currentIndex];
-    if (!img) return;
-
-    // Dual-buffer crossfade for Main App
-    const bg1 = $('#custom-wallpaper-bg');
-    const bg2 = $('#custom-wallpaper-bg-2');
-    const activeBg = this.activeBufferIndex === 1 ? bg1 : bg2;
-    const nextBg = this.activeBufferIndex === 1 ? bg2 : bg1;
-
-    if (activeBg && nextBg) {
-      nextBg.style.backgroundImage = `url('${img.url}')`;
-      nextBg.classList.remove('hidden');
-
-      if (this.kenBurns) {
-        nextBg.classList.add('ken-burns-active');
-      } else {
-        nextBg.classList.remove('ken-burns-active');
-      }
-
-      if (animate) {
-        nextBg.style.opacity = '0.92';
-        activeBg.style.opacity = '0';
-        setTimeout(() => {
-          activeBg.classList.add('hidden');
-        }, 1250);
-      } else {
-        nextBg.style.opacity = '0.92';
-        activeBg.style.opacity = '0';
-        activeBg.classList.add('hidden');
-      }
-
-      this.activeBufferIndex = this.activeBufferIndex === 1 ? 2 : 1;
-    }
-
-    // Dual-buffer crossfade for Fullscreen Player
-    const fsBg1 = $('#fs-custom-wallpaper-bg');
-    const fsBg2 = $('#fs-custom-wallpaper-bg-2');
-    if (fsBg1 && fsBg2) {
-      const fsActive = this.activeBufferIndex === 1 ? fsBg2 : fsBg1;
-      const fsNext = this.activeBufferIndex === 1 ? fsBg1 : fsBg2;
-      fsNext.style.backgroundImage = `url('${img.url}')`;
-      fsNext.classList.remove('hidden');
-      if (this.kenBurns) {
-        fsNext.classList.add('ken-burns-active');
-      } else {
-        fsNext.classList.remove('ken-burns-active');
-      }
-      fsNext.style.opacity = '1';
-      fsActive.style.opacity = '0';
-      setTimeout(() => fsActive.classList.add('hidden'), 1250);
-    }
-    const fsImg = $('#fs-custom-wallpaper-img');
-    if (fsImg) {
-      fsImg.src = img.url;
-      if (this.kenBurns) fsImg.classList.add('ken-burns-active');
-      else fsImg.classList.remove('ken-burns-active');
-      $('#fs-wallpaper-wrap')?.classList.remove('hidden');
-    }
-
-    this.updateCurrentLabels(img);
-    this.highlightActiveThumb();
-    this.saveMetadata();
-  },
-
-  nextImage(manual = false) {
-    if (!this.images.length) return;
-    let nextIdx = 0;
-    if (this.shuffle && this.images.length > 1) {
-      do {
-        nextIdx = Math.floor(Math.random() * this.images.length);
-      } while (nextIdx === this.currentIndex);
-    } else {
-      nextIdx = (this.currentIndex + 1) % this.images.length;
-    }
-    this.applyImage(nextIdx, true);
-    if (manual && !this.isPaused && this.interval !== 'song') {
-      this.resetTimer();
-    }
-  },
-
-  prevImage(manual = false) {
-    if (!this.images.length) return;
-    const prevIdx = (this.currentIndex - 1 + this.images.length) % this.images.length;
-    this.applyImage(prevIdx, true);
-    if (manual && !this.isPaused && this.interval !== 'song') {
-      this.resetTimer();
-    }
-  },
-
-  jumpToIndex(idx) {
-    this.applyImage(idx, true);
-    if (!this.isPaused && this.interval !== 'song') {
-      this.resetTimer();
-    }
-  },
-
-  onSongChange() {
-    if (!this.isActive || userTheme.wallpaperType !== 'folder-slideshow') return;
-    if (this.interval === 'song' && !this.isPaused) {
-      this.nextImage(false);
-    }
-  },
-
-  togglePlayPause() {
-    this.isPaused = !this.isPaused;
-    if (this.isPaused) {
-      this.clearTimer();
-      notify('⏸️ Wallpaper slideshow paused');
-    } else {
-      if (this.interval !== 'song') this.startTimer();
-      notify('▶️ Wallpaper slideshow resumed');
-    }
-    this.updatePlayPauseIcons();
-    this.saveMetadata();
-  },
-
-  startTimer() {
-    this.clearTimer();
-    if (this.interval === 'song' || this.isPaused || !this.isActive) return;
-    const sec = parseInt(this.interval) || 60;
-    this.timerId = setInterval(() => {
-      this.nextImage(false);
-    }, sec * 1000);
-  },
-
-  resetTimer() {
-    this.clearTimer();
-    this.startTimer();
-  },
-
-  clearTimer() {
-    if (this.timerId) {
-      clearInterval(this.timerId);
-      this.timerId = null;
-    }
-  },
-
-  setInterval(val) {
-    this.interval = val === 'song' ? 'song' : parseInt(val) || 60;
-    this.clearTimer();
-    if (this.interval !== 'song' && !this.isPaused && this.isActive) {
-      this.startTimer();
-    }
-    this.saveMetadata();
-    notify(`⏱️ Slideshow interval: ${this.interval === 'song' ? 'On every song change' : this.interval + 's'}`);
-  },
-
-  setShuffle(val) {
-    this.shuffle = !!val;
-    this.saveMetadata();
-    notify(this.shuffle ? '🔀 Wallpaper shuffle enabled' : '➡️ Sequential wallpaper order');
-  },
-
-  setKenBurns(val) {
-    this.kenBurns = !!val;
-    const bg1 = $('#custom-wallpaper-bg');
-    const bg2 = $('#custom-wallpaper-bg-2');
-    const fsBg1 = $('#fs-custom-wallpaper-bg');
-    const fsBg2 = $('#fs-custom-wallpaper-bg-2');
-    [bg1, bg2, fsBg1, fsBg2].forEach(el => {
-      if (el) el.classList.toggle('ken-burns-active', this.kenBurns);
-    });
-    this.saveMetadata();
-    notify(this.kenBurns ? '✨ Ken Burns ambient motion enabled' : 'Static wallpaper view');
-  },
-
-  showBuffers() {
-    if (!this.isActive || !this.images.length) return;
-    const curImg = this.images[this.currentIndex];
-    const bg = this.activeBufferIndex === 1 ? $('#custom-wallpaper-bg') : $('#custom-wallpaper-bg-2');
-    if (bg && curImg) {
-      bg.style.backgroundImage = `url('${curImg.url}')`;
-      bg.classList.remove('hidden');
-      bg.style.opacity = '0.92';
-      if (this.kenBurns) bg.classList.add('ken-burns-active');
-    }
-  },
-
-  showFullscreenBuffers() {
-    if (!this.isActive || !this.images.length) return;
-    const curImg = this.images[this.currentIndex];
-    const fsBg = $('#fs-custom-wallpaper-bg');
-    const fsImg = $('#fs-custom-wallpaper-img');
-    if (curImg) {
-      if (fsBg) {
-        fsBg.style.backgroundImage = `url('${curImg.url}')`;
-        fsBg.classList.remove('hidden');
-        fsBg.style.opacity = '1';
-        if (this.kenBurns) fsBg.classList.add('ken-burns-active');
-      }
-      if (fsImg) {
-        fsImg.src = curImg.url;
-        $('#fs-wallpaper-wrap')?.classList.remove('hidden');
-      }
-    }
-  },
-
-  clearFolder() {
-    this.clearTimer();
-    this.isActive = false;
-    this.images.forEach(img => {
-      if (img.url && img.url.startsWith('blob:')) URL.revokeObjectURL(img.url);
-    });
-    this.images = [];
-    this.folderName = '';
-    this.folderPath = '';
-
-    openWallpaperDB().then(db => {
-      if (db) {
-        try {
-          const tx = db.transaction(WP_STORE_NAME, 'readwrite');
-          const store = tx.objectStore(WP_STORE_NAME);
-          store.openCursor().onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              if (String(cursor.key).startsWith('folder_img_')) cursor.delete();
-              cursor.continue();
-            }
-          };
-        } catch (e) {}
-      }
-    });
-
-    localStorage.removeItem('linus_wallpaper_folder_meta');
-
-    $('#custom-wallpaper-bg')?.classList.add('hidden');
-    $('#custom-wallpaper-bg-2')?.classList.add('hidden');
-    $('#fs-custom-wallpaper-bg')?.classList.add('hidden');
-    $('#fs-custom-wallpaper-bg-2')?.classList.add('hidden');
-
-    userTheme.wallpaperType = 'aura';
-    applyUserTheme(userTheme);
-
-    this.updateStatusUI();
-    notify('Removed wallpaper folder. Restored Living Aura.');
-  },
-
-  saveMetadata() {
-    try {
-      const meta = {
-        folderName: this.folderName,
-        sourceType: this.sourceType,
-        folderPath: this.folderPath,
-        count: this.images.length,
-        fileNames: this.images.map(img => img.name),
-        currentIndex: this.currentIndex,
-        interval: this.interval,
-        shuffle: this.shuffle,
-        kenBurns: this.kenBurns,
-        isPaused: this.isPaused
-      };
-      localStorage.setItem('linus_wallpaper_folder_meta', JSON.stringify(meta));
-    } catch (e) {}
-  },
-
-  renderFilmstrip() {
-    const trays = [$('#folder-filmstrip-tray'), $('#fs-folder-filmstrip-tray')].filter(Boolean);
-    trays.forEach(tray => {
-      tray.innerHTML = '';
-      this.images.forEach((img, idx) => {
-        const thumb = document.createElement('div');
-        thumb.className = `filmstrip-thumb${idx === this.currentIndex ? ' active' : ''}`;
-        thumb.style.backgroundImage = `url('${img.url}')`;
-        thumb.title = `${img.name} (${idx + 1}/${this.images.length})`;
-        thumb.dataset.index = idx;
-        thumb.addEventListener('click', () => this.jumpToIndex(idx));
-        tray.appendChild(thumb);
-      });
-    });
-  },
-
-  highlightActiveThumb() {
-    document.querySelectorAll('.filmstrip-thumb').forEach(thumb => {
-      const isActive = parseInt(thumb.dataset.index) === this.currentIndex;
-      thumb.classList.toggle('active', isActive);
-      if (isActive) thumb.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
-    });
-  },
-
-  updateStatusUI() {
-    const panels = [$('#folder-active-panel'), $('#fs-folder-active-panel')].filter(Boolean);
-    panels.forEach(p => p.classList.toggle('hidden', !this.isActive));
-
-    const nameEls = [$('#folder-active-name'), $('#fs-folder-active-name')].filter(Boolean);
-    nameEls.forEach(el => el.textContent = this.folderName || 'Wallpapers');
-
-    const countEls = [$('#folder-active-count'), $('#fs-folder-active-count')].filter(Boolean);
-    countEls.forEach(el => el.textContent = `${this.images.length} photos`);
-
-    if (this.images.length && this.images[this.currentIndex]) {
-      this.updateCurrentLabels(this.images[this.currentIndex]);
-    }
-    this.updatePlayPauseIcons();
-  },
-
-  updateCurrentLabels(img) {
-    const labels = [$('#folder-current-name'), $('#fs-folder-current-name')].filter(Boolean);
-    labels.forEach(l => {
-      l.textContent = `${img.name} (${this.currentIndex + 1} of ${this.images.length})`;
-    });
-  },
-
-  updatePlayPauseIcons() {
-    const btns = [$('#folder-playpause-btn'), $('#fs-folder-playpause-btn')].filter(Boolean);
-    btns.forEach(btn => {
-      btn.innerHTML = `<i class="ph-fill ${this.isPaused ? 'ph-play' : 'ph-pause'}"></i>`;
-      btn.title = this.isPaused ? 'Resume Slideshow' : 'Pause Slideshow';
-    });
-  },
-
-  syncControlsUI() {
-    if ($('#folder-interval-select')) $('#folder-interval-select').value = String(this.interval);
-    if ($('#folder-shuffle-toggle')) $('#folder-shuffle-toggle').checked = this.shuffle;
-    if ($('#folder-kenburns-toggle')) $('#folder-kenburns-toggle').checked = this.kenBurns;
-  },
-
-  bindEvents() {
-    const onPickFolder = async () => {
-      if ('showDirectoryPicker' in window) {
-        try {
-          const dirHandle = await window.showDirectoryPicker();
-          const files = [];
-          for await (const entry of dirHandle.values()) {
-            if (entry.kind === 'file') {
-              const file = await entry.getFile();
-              if ((file.type && file.type.startsWith('image/')) || /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(file.name)) {
-                files.push(file);
-              }
-            }
-          }
-          if (files.length) {
-            this.loadFromFiles(files, dirHandle.name);
-          } else {
-            notify('⚠️ No supported image files found in selected folder.');
-          }
-          return;
-        } catch (err) {
-          if (err.name === 'AbortError') return;
-        }
-      }
-      $('#wallpaper-folder-input')?.click();
-    };
-
-    $('#btn-pick-wallpaper-folder')?.addEventListener('click', onPickFolder);
-    $('#fs-btn-pick-wallpaper-folder')?.addEventListener('click', onPickFolder);
-
-    $('#wallpaper-folder-input')?.addEventListener('change', (e) => {
-      const files = e.target.files;
-      if (!files || !files.length) return;
-      let fName = 'Wallpapers';
-      if (files[0].webkitRelativePath) {
-        fName = files[0].webkitRelativePath.split('/')[0] || 'Wallpapers';
-      }
-      this.loadFromFiles(files, fName);
-    });
-
-    const onPickFiles = () => $('#wallpaper-multifile-input')?.click();
-    $('#btn-pick-wallpaper-files')?.addEventListener('click', onPickFiles);
-    $('#fs-btn-pick-wallpaper-files')?.addEventListener('click', onPickFiles);
-
-    $('#wallpaper-multifile-input')?.addEventListener('change', (e) => {
-      const files = e.target.files;
-      if (files && files.length) {
-        this.loadFromFiles(files, 'Selected Photos');
-      }
-    });
-
-    const onScanPath = () => {
-      const input = $('#wallpaper-folder-path-input');
-      if (input && input.value.trim()) {
-        this.loadFromLocalPath(input.value.trim());
-      } else {
-        notify('Please enter a folder path (e.g. D:\\Wallpapers)');
-      }
-    };
-    $('#btn-scan-wallpaper-path')?.addEventListener('click', onScanPath);
-    $('#wallpaper-folder-path-input')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') onScanPath();
-    });
-
-    $('#folder-prev-btn')?.addEventListener('click', () => this.prevImage(true));
-    $('#fs-folder-prev-btn')?.addEventListener('click', () => this.prevImage(true));
-
-    $('#folder-playpause-btn')?.addEventListener('click', () => this.togglePlayPause());
-    $('#fs-folder-playpause-btn')?.addEventListener('click', () => this.togglePlayPause());
-
-    $('#folder-next-btn')?.addEventListener('click', () => this.nextImage(true));
-    $('#fs-folder-next-btn')?.addEventListener('click', () => this.nextImage(true));
-
-    $('#folder-clear-btn')?.addEventListener('click', () => this.clearFolder());
-    $('#fs-folder-clear-btn')?.addEventListener('click', () => this.clearFolder());
-
-    $('#folder-interval-select')?.addEventListener('change', (e) => {
-      this.setInterval(e.target.value);
-    });
-
-    $('#folder-shuffle-toggle')?.addEventListener('change', (e) => {
-      this.setShuffle(e.target.checked);
-    });
-
-    $('#folder-kenburns-toggle')?.addEventListener('change', (e) => {
-      this.setKenBurns(e.target.checked);
-    });
-  }
-};
-
-window.FolderWallpaperEngine = FolderWallpaperEngine;
-setTimeout(() => FolderWallpaperEngine.init(), 100);
+  });
+}
 
 // Smart URL Master-Resolution Cleaner (Strips thumbnail downscales & extracts full-res original)
 function cleanMasterImageUrl(rawUrl) {
@@ -1631,7 +1085,6 @@ function applyFullscreenTheme(theme, save = true) {
   if (fsVideoEl && fsTheme.wallpaperType !== 'custom-video' && !STATIC_WALLPAPER_URLS[fsTheme.wallpaperType]) fsVideoEl.src = '';
   fsWallpaperWrap?.classList.add('hidden');
   fsCustomImgBg?.classList.add('hidden');
-  $('#fs-custom-wallpaper-bg-2')?.classList.add('hidden');
   if (fsBg1) { fsBg1.style.display = 'none'; fsBg1.style.opacity = '0'; }
   if (fsBg2) { fsBg2.style.display = 'none'; fsBg2.style.opacity = '0'; }
 
@@ -1640,11 +1093,7 @@ function applyFullscreenTheme(theme, save = true) {
   const isMatchMain = fsTheme.wallpaperType === 'match-main';
   const effectiveWpType = isMatchMain ? currentMainType : fsTheme.wallpaperType;
 
-  if (effectiveWpType === 'folder-slideshow') {
-    if (window.FolderWallpaperEngine) {
-      window.FolderWallpaperEngine.showFullscreenBuffers();
-    }
-  } else if (effectiveWpType === 'custom-image') {
+  if (effectiveWpType === 'custom-image') {
     const imgUrl = fsTheme.customImageSrc || (typeof userTheme !== 'undefined' && userTheme ? userTheme.customImageSrc : '') || fsTheme.sourceUrl || (typeof userTheme !== 'undefined' && userTheme ? userTheme.sourceUrl : '');
     if (imgUrl) {
       if (fsCustomImg && fsCustomImg.src !== imgUrl) fsCustomImg.src = imgUrl;
@@ -1682,6 +1131,12 @@ function applyFullscreenTheme(theme, save = true) {
       }
     }
     fsWallpaperWrap?.classList.remove('hidden');
+  } else if (effectiveWpType === 'folder-slideshow') {
+    if (fsCustomImgBg) {
+      fsCustomImgBg.style.backgroundImage = 'none';
+      fsCustomImgBg.classList.remove('hidden');
+    }
+    syncFullscreenFolderSlide();
   } else if (effectiveWpType === 'custom-video' || (typeof VIDEO_WALLPAPER_URLS !== 'undefined' && VIDEO_WALLPAPER_URLS[effectiveWpType])) {
     const vidUrl = effectiveWpType === 'custom-video'
       ? (fsTheme.customVideoSrc || (typeof userTheme !== 'undefined' && userTheme ? userTheme.customVideoSrc : ''))
@@ -1727,6 +1182,9 @@ function applyFullscreenTheme(theme, save = true) {
 }
 
 function syncFullscreenStudioUI() {
+  if (!fsTheme) {
+    fsTheme = typeof DEFAULT_FS_THEME !== 'undefined' ? { ...DEFAULT_FS_THEME } : {};
+  }
   if (!$('#picker-fs-lyrics-active')) return;
   $('#picker-fs-lyrics-active').value = fsTheme.lyricsActiveColor;
   $('#val-fs-lyrics-active').textContent = fsTheme.lyricsActiveColor;
@@ -1784,7 +1242,7 @@ function syncFullscreenStudioUI() {
   // Framing button active states
   const fitMode = fsTheme.wallpaperFit || 'cover';
   document.querySelectorAll('.fs-fit-btn').forEach(btn => {
-    const bFit = btn.dataset.fit;
+    const bFit = btn.dataset?.fit;
     if (fitMode === 'contain' && bFit === 'contain') btn.classList.add('active');
     else if (fitMode === 'cover' && bFit === 'cover-top' && posVal <= 25) btn.classList.add('active');
     else if (fitMode === 'cover' && bFit === 'cover-center' && posVal > 25) btn.classList.add('active');
@@ -1793,7 +1251,7 @@ function syncFullscreenStudioUI() {
 
   // Sync wallpaper cards
   document.querySelectorAll('.fs-wallpaper-card').forEach(card => {
-    card.classList.toggle('active', card.dataset.fswp === fsTheme.wallpaperType);
+    card.classList.toggle('active', card.dataset?.fswp === fsTheme.wallpaperType);
   });
 
   // Custom media input container visibility
@@ -1816,14 +1274,37 @@ function syncFullscreenStudioUI() {
   if (autoFsCheck) {
     autoFsCheck.checked = fsTheme.autoNativeFullscreen !== false;
   }
-  updateTrueFullscreenUI();
+  if (typeof updateTrueFullscreenUI === 'function') {
+    updateTrueFullscreenUI();
+  } else if (typeof window.updateTrueFullscreenUI === 'function') {
+    window.updateTrueFullscreenUI();
+  }
+}
+
+function openFullscreenStudioCustomizer() {
+  try {
+    syncFullscreenStudioUI();
+  } catch (err) {
+    console.warn('Error in syncFullscreenStudioUI:', err);
+  }
+  const sheet = $('#fs-theme-studio-sheet');
+  if (sheet && !sheet.open) {
+    if (typeof sheet.showModal === 'function') {
+      try {
+        sheet.showModal();
+      } catch (e) {
+        sheet.setAttribute('open', '');
+      }
+    } else {
+      sheet.setAttribute('open', '');
+    }
+  }
 }
 
 // Fullscreen Studio Dialog Open/Close
 $('#fs-studio-btn')?.addEventListener('click', (e) => {
   e.stopPropagation();
-  syncFullscreenStudioUI();
-  $('#fs-theme-studio-sheet')?.showModal();
+  openFullscreenStudioCustomizer();
 });
 
 $('#fs-theme-studio-close')?.addEventListener('click', () => $('#fs-theme-studio-sheet')?.close());
@@ -2247,15 +1728,712 @@ $('#fs-see-more-banner-btn')?.addEventListener('click', () => openWallpaperGalle
 $('#wallpaper-gallery-close')?.addEventListener('click', () => $('#wallpaper-gallery-sheet')?.close());
 $('#wallpaper-gallery-done-btn')?.addEventListener('click', () => $('#wallpaper-gallery-sheet')?.close());
 
+// ============================================================
+// Personal Folder Wallpaper Slideshow Engine (Windows-Style & Better)
+// High-resolution local folder wallpapers with IndexedDB persistence,
+// dual-layer silky crossfade, music track sync, Ken Burns drift,
+// shuffle, interactive thumbnails, and hotkey controls (Alt+W).
+// ============================================================
 
+const FOLDER_WP_STORE_PREFIX = 'folder_slide_';
+const FOLDER_WP_MANIFEST_KEY = 'folder_slideshow_manifest';
+
+function startFolderSlideshowEngine() {
+  if (folderWallpaperItems.length > 0) {
+    applyFolderSlide(currentFolderSlideIndex, false);
+    scheduleNextFolderSlide();
+  }
+  updateFolderUIStatus();
+}
+
+function stopFolderSlideshowEngine() {
+  if (folderSlideshowTimer) {
+    clearTimeout(folderSlideshowTimer);
+    folderSlideshowTimer = null;
+  }
+  $('#wp-crossfade-a')?.classList.remove('active');
+  $('#wp-crossfade-b')?.classList.remove('active');
+  $('#fs-wp-crossfade-a')?.classList.remove('active');
+  $('#fs-wp-crossfade-b')?.classList.remove('active');
+  $('#wp-slideshow-quick-btn')?.classList.add('hidden');
+  const badge = $('#slideshow-active-badge');
+  if (badge) badge.style.display = 'none';
+}
+
+function syncFullscreenFolderSlide() {
+  if (!folderWallpaperItems.length) return;
+  const currentItem = folderWallpaperItems[currentFolderSlideIndex];
+  if (!currentItem || !currentItem.blobUrl) return;
+
+  const fsLayerA = $('#fs-wp-crossfade-a');
+  const fsLayerB = $('#fs-wp-crossfade-b');
+  const targetLayer = activeCrossfadeLayerIsA ? fsLayerA : fsLayerB;
+  const otherLayer = activeCrossfadeLayerIsA ? fsLayerB : fsLayerA;
+
+  if (targetLayer) {
+    targetLayer.style.backgroundImage = `url('${currentItem.blobUrl}')`;
+    targetLayer.style.backgroundSize = folderSlideshowConfig.fitMode || 'cover';
+    if (folderSlideshowConfig.kenBurns) targetLayer.classList.add('ken-burns');
+    else targetLayer.classList.remove('ken-burns');
+    targetLayer.classList.add('active');
+  }
+  otherLayer?.classList.remove('active');
+}
+
+async function restoreFolderSlideshowFromDB() {
+  try {
+    const manifest = await loadWallpaperBlob(FOLDER_WP_MANIFEST_KEY);
+    if (!manifest || !manifest.ids || !manifest.ids.length) return;
+
+    if (manifest.config) folderSlideshowConfig = { ...folderSlideshowConfig, ...manifest.config };
+    folderSlideshowConfig.folderName = manifest.folderName || 'Folder Wallpapers';
+
+    const items = [];
+    for (const id of manifest.ids) {
+      const record = await loadWallpaperBlob(id);
+      if (record && record.blob) {
+        const blobUrl = URL.createObjectURL(record.blob);
+        items.push({
+          id: record.id || id,
+          name: record.name || 'Wallpaper',
+          type: record.type,
+          size: record.size,
+          blob: record.blob,
+          blobUrl: blobUrl
+        });
+      }
+    }
+
+    if (items.length > 0) {
+      folderWallpaperItems = items;
+      folderSlideshowConfig.count = items.length;
+      renderFolderThumbnails();
+      updateFolderUIStatus();
+
+      if (userTheme.wallpaperType === 'folder-slideshow') {
+        const customImgBg = $('#custom-wallpaper-bg');
+        if (customImgBg) {
+          customImgBg.style.backgroundImage = 'none';
+          customImgBg.classList.remove('hidden');
+        }
+        applyFolderSlide(currentFolderSlideIndex, false);
+        scheduleNextFolderSlide();
+      }
+    }
+  } catch (err) {
+    console.warn('Could not restore wallpaper folder from IndexedDB:', err);
+  }
+}
+
+async function clearOldFolderSlidesDB() {
+  try {
+    const manifest = await loadWallpaperBlob(FOLDER_WP_MANIFEST_KEY);
+    if (manifest && manifest.ids && manifest.ids.length) {
+      for (const id of manifest.ids) {
+        await deleteWallpaperBlob(id);
+      }
+    }
+    await deleteWallpaperBlob(FOLDER_WP_MANIFEST_KEY);
+  } catch (e) {
+    console.warn('Error clearing old folder slides from DB:', e);
+  }
+}
+
+async function readDirectoryEntryFiles(dirEntry) {
+  const files = [];
+  const dirReader = dirEntry.createReader();
+
+  const readEntriesPromise = () => new Promise((resolve) => {
+    dirReader.readEntries(async (entries) => {
+      if (!entries.length) return resolve([]);
+      const subFiles = [];
+      for (const entry of entries) {
+        if (entry.isFile) {
+          const file = await new Promise((resFile) => entry.file(resFile));
+          if (file && (file.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|gif|bmp|svg)$/i.test(file.name))) {
+            subFiles.push(file);
+          }
+        } else if (entry.isDirectory) {
+          const nested = await readDirectoryEntryFiles(entry);
+          subFiles.push(...nested);
+        }
+      }
+      const nextBatch = await readEntriesPromise();
+      resolve([...subFiles, ...nextBatch]);
+    }, () => resolve([]));
+  });
+
+  return await readEntriesPromise();
+}
+
+async function ingestWallpaperFiles(files, folderName = 'Wallpapers', isAppend = false) {
+  const imageFiles = Array.from(files).filter(file => {
+    return file.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|gif|bmp|svg)$/i.test(file.name);
+  });
+
+  if (!imageFiles.length) {
+    notify('⚠️ No image files found. Please select JPG, PNG, WEBP, AVIF or GIF photos.');
+    return;
+  }
+
+  notify(`⏳ Ingesting ${imageFiles.length} photos into uncompressed wallpaper vault...`);
+
+  if (!isAppend) {
+    await clearOldFolderSlidesDB();
+    folderWallpaperItems.forEach(item => {
+      if (item.blobUrl) URL.revokeObjectURL(item.blobUrl);
+    });
+    folderWallpaperItems = [];
+    shuffleHistory = [];
+    currentFolderSlideIndex = 0;
+  }
+
+  const startIndex = folderWallpaperItems.length;
+  for (let i = 0; i < imageFiles.length; i++) {
+    const file = imageFiles[i];
+    const id = `${FOLDER_WP_STORE_PREFIX}${startIndex + i}_${Date.now()}`;
+    const record = {
+      id: id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      blob: file
+    };
+    await storeWallpaperBlob(id, record);
+
+    const blobUrl = URL.createObjectURL(file);
+    folderWallpaperItems.push({
+      ...record,
+      blobUrl: blobUrl
+    });
+  }
+
+  folderSlideshowConfig.folderName = folderName;
+  folderSlideshowConfig.count = folderWallpaperItems.length;
+
+  const allIds = folderWallpaperItems.map(item => item.id);
+  await storeWallpaperBlob(FOLDER_WP_MANIFEST_KEY, {
+    folderName: folderName,
+    count: folderWallpaperItems.length,
+    ids: allIds,
+    config: folderSlideshowConfig
+  });
+
+  userTheme.wallpaperType = 'folder-slideshow';
+  applyUserTheme(userTheme);
+
+  renderFolderThumbnails();
+  updateFolderUIStatus();
+  applyFolderSlide(startIndex, false);
+  scheduleNextFolderSlide();
+
+  notify(`✨ Wallpaper Folder Loaded: "${folderName}" (${folderWallpaperItems.length} photos)!`);
+}
+
+function applyFolderSlide(index, animated = true) {
+  if (!folderWallpaperItems.length) return;
+  currentFolderSlideIndex = (index + folderWallpaperItems.length) % folderWallpaperItems.length;
+  const currentItem = folderWallpaperItems[currentFolderSlideIndex];
+  if (!currentItem || !currentItem.blobUrl) return;
+
+  const incomingLayer = activeCrossfadeLayerIsA ? $('#wp-crossfade-b') : $('#wp-crossfade-a');
+  const outgoingLayer = activeCrossfadeLayerIsA ? $('#wp-crossfade-a') : $('#wp-crossfade-b');
+  const fsIncoming = activeCrossfadeLayerIsA ? $('#fs-wp-crossfade-b') : $('#fs-wp-crossfade-a');
+  const fsOutgoing = activeCrossfadeLayerIsA ? $('#fs-wp-crossfade-a') : $('#fs-wp-crossfade-b');
+
+  const durMs = animated ? (parseInt(folderSlideshowConfig.transitionDuration) || 1200) : 0;
+  const durSec = (durMs / 1000).toFixed(2);
+
+  const preloader = new Image();
+  preloader.onload = () => {
+    [incomingLayer, fsIncoming].forEach(layer => {
+      if (layer) {
+        layer.style.transition = animated ? `opacity ${durSec}s cubic-bezier(0.4, 0, 0.2, 1)` : 'none';
+        layer.style.backgroundImage = `url('${currentItem.blobUrl}')`;
+        layer.style.backgroundSize = folderSlideshowConfig.fitMode || 'cover';
+        if (folderSlideshowConfig.kenBurns) layer.classList.add('ken-burns');
+        else layer.classList.remove('ken-burns');
+        layer.classList.add('active');
+      }
+    });
+
+    [outgoingLayer, fsOutgoing].forEach(layer => {
+      if (layer) {
+        layer.style.transition = animated ? `opacity ${durSec}s cubic-bezier(0.4, 0, 0.2, 1)` : 'none';
+        layer.classList.remove('active');
+      }
+    });
+
+    activeCrossfadeLayerIsA = !activeCrossfadeLayerIsA;
+    updateFolderUIStatus();
+  };
+  preloader.src = currentItem.blobUrl;
+}
+
+function advanceFolderSlide(forward = true, userInitiated = false) {
+  if (!folderWallpaperItems.length) return;
+  if (folderWallpaperItems.length === 1) {
+    applyFolderSlide(0, true);
+    return;
+  }
+
+  let nextIndex;
+  if (folderSlideshowConfig.shuffle) {
+    if (shuffleHistory.length >= folderWallpaperItems.length) {
+      shuffleHistory = [currentFolderSlideIndex];
+    }
+    const pool = [];
+    for (let i = 0; i < folderWallpaperItems.length; i++) {
+      if (i !== currentFolderSlideIndex && !shuffleHistory.includes(i)) pool.push(i);
+    }
+    if (pool.length > 0) {
+      nextIndex = pool[Math.floor(Math.random() * pool.length)];
+    } else {
+      nextIndex = (currentFolderSlideIndex + 1) % folderWallpaperItems.length;
+      shuffleHistory = [];
+    }
+    shuffleHistory.push(nextIndex);
+  } else {
+    nextIndex = forward
+      ? (currentFolderSlideIndex + 1) % folderWallpaperItems.length
+      : (currentFolderSlideIndex - 1 + folderWallpaperItems.length) % folderWallpaperItems.length;
+  }
+
+  applyFolderSlide(nextIndex, true);
+  scheduleNextFolderSlide();
+
+  if (userInitiated) {
+    const item = folderWallpaperItems[nextIndex];
+    notify(`🖼️ Wallpaper (${nextIndex + 1}/${folderWallpaperItems.length}): ${item ? item.name : ''}`);
+  }
+}
+
+function scheduleNextFolderSlide() {
+  if (folderSlideshowTimer) {
+    clearTimeout(folderSlideshowTimer);
+    folderSlideshowTimer = null;
+  }
+  if (isSlideshowPaused) return;
+  if (userTheme.wallpaperType !== 'folder-slideshow') return;
+
+  const intervalVal = folderSlideshowConfig.interval;
+  if (intervalVal === 'track-only' || intervalVal === 'manual' || !intervalVal) return;
+
+  const seconds = parseInt(intervalVal, 10);
+  if (isNaN(seconds) || seconds <= 0) return;
+
+  folderSlideshowTimer = setTimeout(() => {
+    advanceFolderSlide(true, false);
+  }, seconds * 1000);
+}
+
+function toggleSlideshowPlayPause() {
+  isSlideshowPaused = !isSlideshowPaused;
+  const iconEl = $('#icon-slideshow-play-pause');
+  const textEl = $('#text-slideshow-play-pause');
+
+  if (isSlideshowPaused) {
+    if (folderSlideshowTimer) clearTimeout(folderSlideshowTimer);
+    if (iconEl) iconEl.className = 'ph-fill ph-play';
+    if (textEl) textEl.textContent = 'Resume';
+    notify('⏸️ Folder wallpaper slideshow paused');
+  } else {
+    if (iconEl) iconEl.className = 'ph-fill ph-pause';
+    if (textEl) textEl.textContent = 'Pause';
+    scheduleNextFolderSlide();
+    notify('▶️ Folder wallpaper slideshow resumed');
+  }
+}
+
+async function selectWallpaperFolder() {
+  if (window.showDirectoryPicker && window.isSecureContext) {
+    try {
+      const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+      const collected = [];
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'file') {
+          const file = await entry.getFile();
+          if (file.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|gif|bmp|svg)$/i.test(file.name)) {
+            collected.push(file);
+          }
+        }
+      }
+      if (collected.length) {
+        await ingestWallpaperFiles(collected, dirHandle.name || 'Folder Wallpapers', false);
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.warn('showDirectoryPicker failed, falling back to input:', err);
+    }
+  }
+  $('#wp-folder-input')?.click();
+}
+
+async function deleteSingleFolderSlide(index, e) {
+  if (e) e.stopPropagation();
+  if (index < 0 || index >= folderWallpaperItems.length) return;
+  const item = folderWallpaperItems[index];
+  if (!item) return;
+
+  if (item.blobUrl) URL.revokeObjectURL(item.blobUrl);
+  await deleteWallpaperBlob(item.id);
+
+  folderWallpaperItems.splice(index, 1);
+  folderSlideshowConfig.count = folderWallpaperItems.length;
+
+  const remainingIds = folderWallpaperItems.map(it => it.id);
+  await storeWallpaperBlob(FOLDER_WP_MANIFEST_KEY, {
+    folderName: folderSlideshowConfig.folderName,
+    count: folderWallpaperItems.length,
+    ids: remainingIds,
+    config: folderSlideshowConfig
+  });
+
+  if (folderWallpaperItems.length === 0) {
+    clearFolderSlideshow();
+  } else {
+    if (currentFolderSlideIndex >= folderWallpaperItems.length) {
+      currentFolderSlideIndex = 0;
+    }
+    renderFolderThumbnails();
+    applyFolderSlide(currentFolderSlideIndex, true);
+    notify(`🗑️ Removed "${item.name}"`);
+  }
+}
+
+async function clearFolderSlideshow() {
+  await clearOldFolderSlidesDB();
+  folderWallpaperItems.forEach(it => {
+    if (it.blobUrl) URL.revokeObjectURL(it.blobUrl);
+  });
+  folderWallpaperItems = [];
+  folderSlideshowConfig.count = 0;
+  folderSlideshowConfig.folderName = '';
+
+  userTheme.wallpaperType = 'aura';
+  applyUserTheme(userTheme);
+
+  renderFolderThumbnails();
+  updateFolderUIStatus();
+  notify('Folder slideshow cleared. Reverted to Dynamic Aura.');
+}
+
+function renderFolderThumbnails() {
+  const container = $('#folder-thumbnails-container');
+  if (!container) return;
+
+  if (!folderWallpaperItems.length) {
+    container.innerHTML = '<p class="muted" style="font-size:12px;grid-column:1/-1;text-align:center;padding:16px;">No photos loaded in folder vault.</p>';
+    return;
+  }
+
+  container.innerHTML = folderWallpaperItems.map((item, idx) => {
+    const isActive = idx === currentFolderSlideIndex;
+    return `
+      <div class="folder-thumb-card ${isActive ? 'active' : ''}" data-idx="${idx}" style="background-image:url('${item.blobUrl}')" title="${item.name}">
+        ${isActive ? '<span class="thumb-badge-active"><i class="ph-fill ph-check"></i> Active</span>' : ''}
+        <button type="button" class="thumb-delete-btn" data-delete-idx="${idx}" title="Remove photo from slideshow">✕</button>
+        <span class="thumb-name-label">${item.name}</span>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.folder-thumb-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.thumb-delete-btn')) return;
+      const idx = parseInt(card.dataset.idx, 10);
+      if (!isNaN(idx)) {
+        applyFolderSlide(idx, true);
+        scheduleNextFolderSlide();
+        notify(`🖼️ Wallpaper: ${folderWallpaperItems[idx]?.name || ''}`);
+      }
+    });
+  });
+
+  container.querySelectorAll('.thumb-delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(btn.dataset.deleteIdx, 10);
+      if (!isNaN(idx)) deleteSingleFolderSlide(idx, e);
+    });
+  });
+}
+
+function updateFolderUIStatus(nameOverride) {
+  const isLoaded = folderWallpaperItems.length > 0;
+  const isWpTypeActive = userTheme.wallpaperType === 'folder-slideshow';
+  const currentItem = folderWallpaperItems[currentFolderSlideIndex];
+  const name = nameOverride || (currentItem ? currentItem.name : '');
+
+  const titleEl = $('#slideshow-current-title');
+  if (titleEl) titleEl.textContent = name || (isLoaded ? 'Folder Ready' : 'No Folder Selected');
+
+  const counterEl = $('#slideshow-current-counter');
+  if (counterEl) {
+    counterEl.textContent = isLoaded
+      ? `Photo ${currentFolderSlideIndex + 1} of ${folderWallpaperItems.length} (${folderSlideshowConfig.folderName || 'Folder'})`
+      : 'Wallpaper 0 of 0';
+  }
+
+  const thumbCountEl = $('#folder-thumbnails-count');
+  if (thumbCountEl) thumbCountEl.textContent = `${folderWallpaperItems.length}`;
+
+  const dropTitle = $('#dropzone-title');
+  const dropDesc = $('#dropzone-desc');
+  if (dropTitle && dropDesc) {
+    if (isLoaded) {
+      dropTitle.textContent = `Active Folder: ${folderSlideshowConfig.folderName || 'Wallpapers'}`;
+      dropDesc.textContent = `${folderWallpaperItems.length} wallpapers ready in uncompressed high resolution. You can drop more photos to expand the slideshow.`;
+    } else {
+      dropTitle.textContent = 'Select or Drop a Wallpaper Folder';
+      dropDesc.textContent = 'Choose a folder on your PC containing 4K/HD photos, anime, nature, or artwork. Linus will cycle through them automatically with seamless crossfade and music synchronization.';
+    }
+  }
+
+  const clearBtn = $('#btn-clear-wp-folder');
+  if (clearBtn) clearBtn.classList.toggle('hidden', !isLoaded);
+
+  const deck = $('#slideshow-controls-deck');
+  if (deck) deck.classList.toggle('hidden', !isLoaded);
+
+  const activeBadge = $('#slideshow-active-badge');
+  if (activeBadge) activeBadge.style.display = (isLoaded && isWpTypeActive) ? 'inline-flex' : 'none';
+
+  const quickStatus = $('#quick-folder-status-text');
+  if (quickStatus) {
+    quickStatus.textContent = isLoaded 
+      ? `Active: ${folderSlideshowConfig.folderName || 'Wallpapers'} (${folderWallpaperItems.length} photos)`
+      : 'No folder active';
+  }
+
+  // Header quick pill
+  const quickHeaderBtn = $('#wp-slideshow-quick-btn');
+  const quickHeaderText = $('#wp-slideshow-quick-text');
+  if (quickHeaderBtn && quickHeaderText) {
+    if (isLoaded && isWpTypeActive) {
+      quickHeaderBtn.classList.remove('hidden');
+      quickHeaderText.textContent = `${currentFolderSlideIndex + 1}/${folderWallpaperItems.length}`;
+    } else {
+      quickHeaderBtn.classList.add('hidden');
+    }
+  }
+
+  // Update thumbnail active states
+  $('#folder-thumbnails-container')?.querySelectorAll('.folder-thumb-card').forEach((card, idx) => {
+    const isCur = idx === currentFolderSlideIndex;
+    card.classList.toggle('active', isCur);
+    const badge = card.querySelector('.thumb-badge-active');
+    if (isCur && !badge) {
+      card.insertAdjacentHTML('afterbegin', '<span class="thumb-badge-active"><i class="ph-fill ph-check"></i> Active</span>');
+    } else if (!isCur && badge) {
+      badge.remove();
+    }
+  });
+}
+
+function setupFolderSlideshowEventListeners() {
+  // Select Folder Buttons & Inputs
+  $('#btn-browse-wp-folder')?.addEventListener('click', selectWallpaperFolder);
+  $('#btn-add-wp-images')?.addEventListener('click', () => $('#wp-images-input')?.click());
+  $('#btn-clear-wp-folder')?.addEventListener('click', clearFolderSlideshow);
+
+  $('#wp-folder-input')?.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const folderName = files[0]?.webkitRelativePath?.split('/')[0] || 'My Wallpapers';
+    await ingestWallpaperFiles(files, folderName, false);
+    e.target.value = '';
+  });
+
+  $('#wp-images-input')?.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    await ingestWallpaperFiles(files, folderSlideshowConfig.folderName || 'Wallpapers', true);
+    e.target.value = '';
+  });
+
+  // Drag and drop zone
+  const dropzone = $('#wp-folder-dropzone');
+  if (dropzone) {
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('drag-active');
+    });
+    dropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('drag-active');
+    });
+    dropzone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('drag-active');
+
+      const items = e.dataTransfer.items;
+      const files = [];
+      let detectedFolderName = 'Dropped Wallpapers';
+
+      if (items && items.length) {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+          if (entry && entry.isDirectory) {
+            detectedFolderName = entry.name;
+            const dirFiles = await readDirectoryEntryFiles(entry);
+            files.push(...dirFiles);
+          } else if (item.kind === 'file') {
+            const file = item.getAsFile();
+            if (file) files.push(file);
+          }
+        }
+      } else if (e.dataTransfer.files) {
+        files.push(...Array.from(e.dataTransfer.files));
+      }
+
+      if (files.length) {
+        await ingestWallpaperFiles(files, detectedFolderName, false);
+      }
+    });
+  }
+
+  // Navigation Buttons
+  $('#btn-slideshow-prev')?.addEventListener('click', () => advanceFolderSlide(false, true));
+  $('#btn-slideshow-next')?.addEventListener('click', () => advanceFolderSlide(true, true));
+  $('#btn-slideshow-play-pause')?.addEventListener('click', toggleSlideshowPlayPause);
+
+  $('#btn-slideshow-shuffle')?.addEventListener('click', () => {
+    folderSlideshowConfig.shuffle = !folderSlideshowConfig.shuffle;
+    $('#btn-slideshow-shuffle')?.classList.toggle('active', !!folderSlideshowConfig.shuffle);
+    notify(folderSlideshowConfig.shuffle ? '🔀 Wallpaper Shuffle On' : '➡️ Sequential Wallpaper Order');
+    saveFolderConfig();
+  });
+
+  $('#select-slideshow-interval')?.addEventListener('change', (e) => {
+    folderSlideshowConfig.interval = e.target.value;
+    scheduleNextFolderSlide();
+    saveFolderConfig();
+    notify(`⏱️ Slideshow interval: ${e.target.options[e.target.selectedIndex].text}`);
+  });
+
+  $('#toggle-slideshow-track-sync')?.addEventListener('change', (e) => {
+    folderSlideshowConfig.changeOnTrack = e.target.checked;
+    saveFolderConfig();
+    notify(e.target.checked ? '🎵 Background synced with track changes' : 'Background track sync disabled');
+  });
+
+  $('#toggle-slideshow-kenburns')?.addEventListener('change', (e) => {
+    folderSlideshowConfig.kenBurns = e.target.checked;
+    saveFolderConfig();
+    const activeLayers = [$('#wp-crossfade-a'), $('#wp-crossfade-b'), $('#fs-wp-crossfade-a'), $('#fs-wp-crossfade-b')];
+    activeLayers.forEach(l => {
+      if (l) {
+        if (folderSlideshowConfig.kenBurns) l.classList.add('ken-burns');
+        else l.classList.remove('ken-burns');
+      }
+    });
+    notify(e.target.checked ? '✨ Ken Burns cinematic pan & zoom on' : 'Ken Burns drift off');
+  });
+
+  $('#select-slideshow-transition')?.addEventListener('change', (e) => {
+    folderSlideshowConfig.transitionDuration = e.target.value;
+    saveFolderConfig();
+  });
+
+  // Quick action from import deck
+  $('#quick-open-folder-slideshow-btn')?.addEventListener('click', () => {
+    $('#pill-subfolder-slideshow')?.click();
+    if (!folderWallpaperItems.length) selectWallpaperFolder();
+  });
+
+  // Fullscreen studio triggers
+  $('#fs-btn-activate-slideshow')?.addEventListener('click', () => {
+    if (folderWallpaperItems.length > 0) {
+      userTheme.wallpaperType = 'folder-slideshow';
+      applyUserTheme(userTheme);
+      fsTheme.wallpaperType = 'folder-slideshow';
+      applyFullscreenTheme(fsTheme);
+      notify('📁 Folder Slideshow activated in Fullscreen!');
+    } else {
+      $('#fs-theme-studio-sheet')?.close();
+      $('#theme-studio-sheet')?.showModal();
+      $('#pill-subfolder-slideshow')?.click();
+      selectWallpaperFolder();
+    }
+  });
+
+  $('#fs-btn-manage-slideshow')?.addEventListener('click', () => {
+    $('#fs-theme-studio-sheet')?.close();
+    $('#theme-studio-sheet')?.showModal();
+    $('#pill-subfolder-slideshow')?.click();
+  });
+
+  // Header quick pill
+  $('#wp-slideshow-quick-btn')?.addEventListener('click', () => {
+    advanceFolderSlide(true, true);
+  });
+
+  // Audio track change hook for Music Sync
+  const audioEl = document.getElementById('audio');
+  if (audioEl) {
+    audioEl.addEventListener('play', () => {
+      if (userTheme.wallpaperType !== 'folder-slideshow') return;
+      if (!folderSlideshowConfig.changeOnTrack) return;
+      if (isSlideshowPaused) return;
+
+      const currentSrc = audioEl.currentSrc || audioEl.src;
+      if (currentSrc && currentSrc !== lastObservedTrackSrc) {
+        lastObservedTrackSrc = currentSrc;
+        setTimeout(() => {
+          advanceFolderSlide(true, false);
+        }, 400);
+      }
+    });
+  }
+}
+
+async function saveFolderConfig() {
+  try {
+    const manifest = await loadWallpaperBlob(FOLDER_WP_MANIFEST_KEY);
+    if (manifest) {
+      manifest.config = folderSlideshowConfig;
+      await storeWallpaperBlob(FOLDER_WP_MANIFEST_KEY, manifest);
+    }
+  } catch (e) {}
+}
+
+function handleSongChangeForWallpaper() {
+  if (userTheme.wallpaperType !== 'folder-slideshow') return;
+  if (!folderSlideshowConfig.changeOnTrack) return;
+  if (isSlideshowPaused) return;
+
+  setTimeout(() => {
+    advanceFolderSlide(true, false);
+  }, 400);
+}
+
+// Initialize Folder Slideshow Subsystem on boot
+setupFolderSlideshowEventListeners();
+restoreFolderSlideshowFromDB();
 
   // Expose Theme Studio APIs to global window
   window.DEFAULT_USER_THEME = DEFAULT_USER_THEME;
   window.DEFAULT_FS_THEME = DEFAULT_FS_THEME;
   window.applyUserTheme = applyUserTheme;
   window.applyFullscreenTheme = applyFullscreenTheme;
+  window.openStudioCustomizer = openStudioCustomizer;
+  window.openFullscreenStudioCustomizer = openFullscreenStudioCustomizer;
   window.openWallpaperGallery = openWallpaperGallery;
   window.userTheme = typeof userTheme !== 'undefined' ? userTheme : DEFAULT_USER_THEME;
   window.fsTheme = typeof fsTheme !== 'undefined' ? fsTheme : DEFAULT_FS_THEME;
+  window.linusWallpaperFolder = {
+    advanceNext: (userInitiated = true) => advanceFolderSlide(true, userInitiated),
+    advancePrev: (userInitiated = true) => advanceFolderSlide(false, userInitiated),
+    togglePause: toggleSlideshowPlayPause,
+    openFolderPicker: selectWallpaperFolder,
+    getItems: () => folderWallpaperItems,
+    getConfig: () => folderSlideshowConfig,
+    onSongChange: handleSongChangeForWallpaper
+  };
 
 })();

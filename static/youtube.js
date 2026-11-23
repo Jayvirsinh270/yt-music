@@ -236,7 +236,7 @@ function _attachExploreCardHandlers(container) {
   container.querySelectorAll('.dl-mp4-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      triggerInstantDownload(btn.dataset.url, 'video', 'mp4', '720', btn.dataset.title);
+      triggerInstantDownload(btn.dataset.url, 'video', 'mp4', 'best', btn.dataset.title);
     });
   });
 

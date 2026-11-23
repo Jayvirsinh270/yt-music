@@ -417,6 +417,68 @@ def cache_online_tracks_endpoint():
     return jsonify({"status": "success", "cached_count": cached_count})
 
 
+@app.post("/api/playlists/save-mix")
+def save_mix_to_playlist():
+    """Converts an auto-generated mix (Circadian, Capsule, Vibe, Rewind) into a permanent user playlist."""
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    tracks = data.get("tracks") or []
+    if not name:
+        return jsonify({"status": "error", "message": "Playlist name is required"}), 400
+    if not isinstance(tracks, list) or not tracks:
+        return jsonify({"status": "error", "message": "Tracks list is required and cannot be empty"}), 400
+
+    # 1. Update state.json / preference user_state
+    state = load_state()
+    playlists = state.setdefault("playlists", {})
+
+    target_name = name
+    counter = 2
+    while target_name in playlists:
+        target_name = f"{name} ({counter})"
+        counter += 1
+
+    track_ids = []
+    online_tracks = []
+    for t in tracks:
+        if isinstance(t, dict):
+            tid = t.get("id") or t.get("track_id")
+            if tid:
+                track_ids.append(tid)
+                if t.get("is_youtube") or t.get("is_online") or str(tid).startswith("yt:"):
+                    online_tracks.append(t)
+        elif isinstance(t, str):
+            track_ids.append(t)
+
+    if not track_ids:
+        return jsonify({"status": "error", "message": "No valid track IDs provided"}), 400
+
+    playlists[target_name] = track_ids
+    save_state(state)
+
+    # 2. Sync to db_store playlists & playlist_tracks table
+    try:
+        db.create_playlist(target_name)
+        for pos, tid in enumerate(track_ids):
+            db.add_track_to_playlist(target_name, tid, position=pos)
+    except Exception:
+        pass
+
+    # 3. Cache any online tracks into tracks_meta
+    if online_tracks:
+        try:
+            db.upsert_online_tracks_batch(online_tracks)
+        except Exception:
+            pass
+
+    return jsonify({
+        "status": "success",
+        "playlist_name": target_name,
+        "track_count": len(track_ids),
+        "track_ids": track_ids
+    })
+
+
 @app.get("/api/settings")
 def get_user_settings_route():
     """Retrieves all user settings persisted in the database."""
@@ -577,7 +639,7 @@ def download():
     url        = payload.get("url", "").strip()
     media_type = payload.get("media_type", "audio").strip()
     fmt        = payload.get("format", "mp3" if media_type == "audio" else "mp4").strip().lower()
-    quality    = str(payload.get("quality", "192" if media_type == "audio" else "720")).strip()
+    quality    = str(payload.get("quality", "192" if media_type == "audio" else "best")).strip()
     category   = payload.get("category", "").strip()
 
     if not url or not re.match(r"^https?://", url):
@@ -1705,6 +1767,7 @@ def api_recommend_batch():
     count = min(30, int(body.get("count", 25)))
     recent_history = body.get("history", [])
     consecutive_skips = int(body.get("consecutive_skips", 0))
+    discovery_mode = str(body.get("discovery_mode", "balanced") or "balanced").lower()
 
     if mode == "online":
         clean_vid = current_track_id.replace("yt:", "") if current_track_id.startswith("yt:") else ""
@@ -1713,7 +1776,9 @@ def api_recommend_batch():
             artist=artist,
             current_video_id=clean_vid,
             count=count,
-            recent_history=recent_history
+            recent_history=recent_history,
+            consecutive_skips=consecutive_skips,
+            discovery_mode=discovery_mode
         )
         if yt_batch:
             return jsonify({"status": "success", "mode": "online", "tracks": yt_batch})
@@ -1731,7 +1796,8 @@ def api_recommend_batch():
         library_tracks=tracks,
         count=count,
         recent_history=recent_history,
-        consecutive_skips=consecutive_skips
+        consecutive_skips=consecutive_skips,
+        discovery_mode=discovery_mode
     )
     return jsonify({"status": "success", "mode": "offline", "tracks": local_batch})
 
@@ -1797,6 +1863,7 @@ def api_recommend_dashboard():
             "sections": result.get("sections", []),
             "quick_grid": result.get("quick_grid", []),
             "daily_capsules": result.get("daily_capsules", []),
+            "circadian_capsule": result.get("circadian_capsule", {}),
             "top_artist": result.get("top_artist", ""),
             "top_genre": result.get("top_genre", ""),
             "taste_summary": result.get("taste_summary", {}),
@@ -1825,6 +1892,7 @@ def api_recommend_dashboard_refresh():
             "sections": result.get("sections", []),
             "quick_grid": result.get("quick_grid", []),
             "daily_capsules": result.get("daily_capsules", []),
+            "circadian_capsule": result.get("circadian_capsule", {}),
             "top_artist": result.get("top_artist", ""),
             "top_genre": result.get("top_genre", ""),
             "taste_summary": result.get("taste_summary", {}),
@@ -1833,25 +1901,51 @@ def api_recommend_dashboard_refresh():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
+@app.get("/api/recommend/circadian-capsule")
+def api_recommend_circadian_capsule():
+    """Returns the current 'Soundtrack of Your Day' time capsule."""
+    tracks = scan_library()
+    capsule = rec.get_circadian_time_capsule(tracks, count=15)
+    return jsonify(capsule)
+
+
 @app.post("/api/recommend/next")
 def api_recommend_next():
-    """Single next track fallback endpoint."""
+    """Single next track fallback endpoint with skip-recovery intelligence."""
     body = request.get_json(silent=True) or {}
     mode = body.get("mode", "online")
     current_track_id = body.get("track_id", "")
     title = body.get("title", "")
     artist = body.get("artist", "")
+    category = body.get("category", "")
+    consecutive_skips = int(body.get("consecutive_skips", 0) or 0)
+    discovery_mode = str(body.get("discovery_mode", "balanced") or "balanced").lower()
     recent_history = body.get("history", [])
 
     if mode == "online":
         clean_vid = current_track_id.replace("yt:", "") if current_track_id.startswith("yt:") else ""
-        yt_batch = rec.get_youtube_recommendation_batch(title=title, artist=artist, current_video_id=clean_vid, count=1, recent_history=recent_history)
+        yt_batch = rec.get_youtube_recommendation_batch(
+            title=title,
+            artist=artist,
+            current_video_id=clean_vid,
+            count=1,
+            recent_history=recent_history,
+            consecutive_skips=consecutive_skips,
+            discovery_mode=discovery_mode
+        )
         if yt_batch:
             return jsonify({"status": "success", "mode": "online", "track": yt_batch[0]})
 
     tracks = scan_library()
-    current_track = {"id": current_track_id, "title": title, "artist": artist, "category": body.get("category", "")}
-    local_batch = rec.get_local_recommendation_batch(current_track=current_track, library_tracks=tracks, count=1, recent_history=recent_history)
+    current_track = {"id": current_track_id, "title": title, "artist": artist, "category": category}
+    local_batch = rec.get_local_recommendation_batch(
+        current_track=current_track,
+        library_tracks=tracks,
+        count=1,
+        recent_history=recent_history,
+        consecutive_skips=consecutive_skips,
+        discovery_mode=discovery_mode
+    )
     if local_batch:
         return jsonify({"status": "success", "mode": "offline", "track": local_batch[0]})
 

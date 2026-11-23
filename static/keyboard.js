@@ -40,6 +40,15 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
+  // 0b. Next Folder Wallpaper Slideshow (Alt + W)
+  if (e.altKey && (lowerKey === 'w' || code === 'KeyW')) {
+    e.preventDefault();
+    if (window.linusWallpaperFolder && typeof window.linusWallpaperFolder.advanceNext === 'function') {
+      window.linusWallpaperFolder.advanceNext(true);
+    }
+    return;
+  }
+
   // 1. Play / Pause (Space)
   if (key === ' ' || code === 'Space') {
     e.preventDefault();
@@ -140,7 +149,13 @@ document.addEventListener('keydown', (e) => {
   // 10. Lyrics Toggle (L)
   if (lowerKey === 'l' && !e.ctrlKey && !e.metaKey) {
     e.preventDefault();
-    $('#hero-lyrics')?.click();
+    if (typeof toggleMiniLyricsDrawer === 'function') {
+      toggleMiniLyricsDrawer();
+    } else if (window.toggleMiniLyricsDrawer) {
+      window.toggleMiniLyricsDrawer();
+    } else {
+      $('#hero-lyrics')?.click();
+    }
     return;
   }
 

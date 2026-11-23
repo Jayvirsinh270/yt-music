@@ -488,6 +488,12 @@ function hydrate(data) {
     if (userSettings.radio_mode && typeof radioMode !== 'undefined') {
       radioMode = userSettings.radio_mode;
     }
+    if (userSettings.discovery_mode) {
+      state.discovery_mode = userSettings.discovery_mode;
+      if (typeof setDiscoveryMode === 'function') {
+        setDiscoveryMode(userSettings.discovery_mode, false);
+      }
+    }
     if (typeof userSettings.autodj_duration === 'number' && typeof autoDJDuration !== 'undefined') {
       autoDJDuration = userSettings.autodj_duration;
     }
@@ -1018,7 +1024,10 @@ function _resolveTrack(trackOrId) {
 function playNext(trackOrId) {
   const t = _resolveTrack(trackOrId);
   if (!t || t.missing) return notify('Track not available.');
+  t.isUserQueued = true;
   if (queue.length === 0) {
+    queue = [t];
+    currentIndex = 0;
     if (t.is_online && t.video_id) {
       streamYouTubeAudio(t.video_id, t.title, t.artist, t.artwork_url, t.duration);
     } else {
@@ -1036,6 +1045,7 @@ function playNext(trackOrId) {
   if (existingIdx > currentIndex) {
     // Relocate existing upcoming item to top of up-next
     const [moved] = queue.splice(existingIdx, 1);
+    moved.isUserQueued = true;
     queue.splice(currentIndex + 1, 0, moved);
   } else {
     queue.splice(currentIndex + 1, 0, t);
@@ -1048,6 +1058,7 @@ function playNext(trackOrId) {
 function addToQueue(trackOrId) {
   const t = _resolveTrack(trackOrId);
   if (!t || t.missing) return notify('Track not available.');
+  t.isUserQueued = true;
 
   // If already playing
   if (queue[currentIndex] && queue[currentIndex].id === t.id) {
@@ -1062,11 +1073,21 @@ function addToQueue(trackOrId) {
     return;
   }
 
-  queue.push(t);
+  // Two-Tier Priority Queue: Insert after the last user-queued track (before auto radio)
+  let lastUserIdx = currentIndex;
+  for (let i = currentIndex + 1; i < queue.length; i++) {
+    if (queue[i] && queue[i].isUserQueued) {
+      lastUserIdx = i;
+    } else {
+      break;
+    }
+  }
+
+  queue.splice(lastUserIdx + 1, 0, t);
   renderQueue();
   debouncedSaveQueue();
-  const pos = Math.max(1, queue.length - (currentIndex + 1));
-  notify(`➕ "${t.title}" added to queue (#${pos} up next)!`);
+  const pos = Math.max(1, lastUserIdx + 1 - currentIndex);
+  notify(`➕ "${t.title}" added to your queue (#${pos} up next)!`);
 }
 
 function renderFavorites() {
@@ -2094,7 +2115,10 @@ function renderRecCard(track, wide = false) {
       <div class="rec-card-info">
         <span class="rec-card-title" title="${escapeHtml(track.title || '')}">${escapeHtml(track.title || 'Unknown')}</span>
         <span class="rec-card-artist">${escapeHtml(track.artist || '')}</span>
-        ${pillHtml}
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">
+          ${pillHtml}
+          ${track.rec_reason ? `<span class="rec-card-reason" style="font-size:9.5px;padding:2px 6px;border-radius:10px;background:rgba(212,176,122,0.14);color:var(--accent);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;display:inline-block;" title="${escapeHtml(track.rec_reason)}"><i class="ph-fill ph-sparkle"></i> ${escapeHtml(track.rec_reason)}</span>` : ''}
+        </div>
       </div>
     `;
   } else {
@@ -2110,7 +2134,10 @@ function renderRecCard(track, wide = false) {
       <div class="rec-card-info">
         <span class="rec-card-title" title="${escapeHtml(track.title || '')}">${escapeHtml(track.title || 'Unknown')}</span>
         <span class="rec-card-artist">${escapeHtml(track.artist || '')}</span>
-        ${pillHtml}
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">
+          ${pillHtml}
+          ${track.rec_reason ? `<span class="rec-card-reason" style="font-size:9.5px;padding:2px 6px;border-radius:10px;background:rgba(212,176,122,0.14);color:var(--accent);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;display:inline-block;" title="${escapeHtml(track.rec_reason)}"><i class="ph-fill ph-sparkle"></i> ${escapeHtml(track.rec_reason)}</span>` : ''}
+        </div>
       </div>
     `;
   }
@@ -2309,9 +2336,14 @@ function renderDailyCapsules(capsules) {
             <span class="capsule-card-title">${escapeHtml(cap.title)}</span>
             <span class="capsule-card-sub">${escapeHtml(cap.subtitle || '')}</span>
           </div>
-          <button class="capsule-play-circle" title="Play ${escapeHtml(cap.title)}" aria-label="Play">
-            <i class="ph-fill ph-play"></i>
-          </button>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="capsule-save-btn" title="Save ${escapeHtml(cap.title)} as Playlist" aria-label="Save as Playlist">
+              <i class="ph-bold ph-folder-simple-plus"></i>
+            </button>
+            <button class="capsule-play-circle" title="Play ${escapeHtml(cap.title)}" aria-label="Play">
+              <i class="ph-fill ph-play"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -2319,6 +2351,20 @@ function renderDailyCapsules(capsules) {
 
   container.querySelectorAll('.capsule-card').forEach((card, idx) => {
     const cap = capsules[idx];
+    const saveBtn = card.querySelector('.capsule-save-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (cap.tracks && cap.tracks.length > 0) {
+          if (typeof window.saveMixAsPlaylist === 'function') {
+            await window.saveMixAsPlaylist(cap.title, cap.tracks);
+          }
+        } else {
+          notify('⚠️ No tracks available in this capsule to save.');
+        }
+      });
+    }
+
     card.addEventListener('click', () => {
       if (cap.tracks && cap.tracks.length > 0) {
         queue = [...cap.tracks];
@@ -2350,6 +2396,10 @@ function renderSonicDnaCard(tasteSummary, topArtist) {
     return;
   }
 
+  // Persist current summary and artist globally for export
+  window._currentTasteSummary = tasteSummary;
+  window._currentTopArtist = topArtist;
+
   const streak = tasteSummary.listening_streak_days || 1;
   const hours = tasteSummary.total_listen_hours || 0.0;
   const vibe = tasteSummary.sonic_vibe_badge || '✨ Serene Music Voyager';
@@ -2368,9 +2418,9 @@ function renderSonicDnaCard(tasteSummary, topArtist) {
 
   const genresHtml = genres.length > 0
     ? genres.map(g => `
-        <div class="sonic-meter-row">
+        <div class="sonic-meter-row" data-genre="${escapeHtml(g.name)}" title="Click to start ${escapeHtml(g.name)} Radio" style="cursor:pointer;transition:transform 0.15s ease;">
           <div class="sonic-meter-meta">
-            <span class="sonic-meter-name">${escapeHtml(g.name)}</span>
+            <span class="sonic-meter-name"><i class="ph-bold ph-broadcast" style="font-size:10px;opacity:0.6;margin-right:4px;"></i>${escapeHtml(g.name)}</span>
             <span class="sonic-meter-percent">${g.percent}%</span>
           </div>
           <div class="sonic-meter-track">
@@ -2390,16 +2440,20 @@ function renderSonicDnaCard(tasteSummary, topArtist) {
       </div>
     `;
 
-  // Top Artists Detail panel
+  // Top Artists Detail panel with interactive radio launcher
   const artistDetailHtml = artistsDetail.length > 0 ? `
     <div class="sonic-artists-detail">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.45);font-weight:600;margin-bottom:8px;">Your Top Artists</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.45);font-weight:600;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span>Your Top Artists</span>
+        <span style="font-size:10px;text-transform:none;opacity:0.8;font-weight:400;"><i class="ph ph-play-circle"></i> Click to play radio</span>
+      </div>
       ${artistsDetail.map((a, i) => `
-        <div class="sonic-artist-row">
+        <div class="sonic-artist-row" data-artist="${escapeHtml(a.name)}" title="Start ${escapeHtml(a.name)} Radio" style="cursor:pointer;transition:background 0.15s ease, transform 0.1s ease;padding:4px 6px;border-radius:6px;">
           <span class="sonic-artist-rank">#${i + 1}</span>
           <span class="sonic-artist-name" title="${escapeHtml(a.name)}">${escapeHtml((a.name || '').slice(0, 20))}</span>
           <span class="sonic-artist-plays">${a.play_count} plays</span>
           <span class="sonic-artist-comp" title="Avg completion">${a.completion_rate}%</span>
+          <i class="ph-fill ph-play-circle" style="color:var(--accent);font-size:13px;opacity:0.75;margin-left:4px;"></i>
         </div>
       `).join('')}
     </div>
@@ -2418,9 +2472,14 @@ function renderSonicDnaCard(tasteSummary, topArtist) {
 
   container.innerHTML = `
     <div class="sonic-dna-left">
-      <span class="sonic-dna-vibe-pill">
-        <i class="ph-fill ph-sparkle"></i> ${escapeHtml(vibe)}
-      </span>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span class="sonic-dna-vibe-pill">
+          <i class="ph-fill ph-sparkle"></i> ${escapeHtml(vibe)}
+        </span>
+        <button class="sonic-card-inline-share-btn" id="sonic-card-inline-share-btn" title="Export &amp; Share your Sonic DNA card">
+          <i class="ph-bold ph-camera"></i> Share DNA Card
+        </button>
+      </div>
       <h3 class="sonic-dna-title">Your Sonic Identity</h3>
       <div class="sonic-dna-stats-row">
         <div class="sonic-stat-item">
@@ -2432,9 +2491,9 @@ function renderSonicDnaCard(tasteSummary, topArtist) {
           <span class="sonic-stat-label">Total Listened</span>
         </div>
         ${topArtist ? `
-        <div class="sonic-stat-item">
+        <div class="sonic-stat-item" data-artist="${escapeHtml(topArtist)}" title="Click to play ${escapeHtml(topArtist)} Radio" style="cursor:pointer;">
           <span class="sonic-stat-val" title="${escapeHtml(topArtist)}">${escapeHtml(topArtist.slice(0, 12))}</span>
-          <span class="sonic-stat-label">Top Artist</span>
+          <span class="sonic-stat-label">Top Artist <i class="ph-fill ph-play-circle" style="font-size:10px;"></i></span>
         </div>` : ''}
       </div>
       ${insightsHtml}
@@ -2445,6 +2504,48 @@ function renderSonicDnaCard(tasteSummary, topArtist) {
       ${genresHtml}
     </div>
   `;
+
+  // Wire Share DNA Card buttons
+  const cardShareBtn = container.querySelector('#sonic-card-inline-share-btn');
+  if (cardShareBtn) {
+    cardShareBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof window.exportSonicDnaCard === 'function') {
+        window.exportSonicDnaCard(tasteSummary, topArtist);
+      }
+    });
+  }
+  const shelfShareBtn = document.getElementById('sonic-dna-share-btn');
+  if (shelfShareBtn && !shelfShareBtn._bound) {
+    shelfShareBtn._bound = true;
+    shelfShareBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof window.exportSonicDnaCard === 'function') {
+        window.exportSonicDnaCard(window._currentTasteSummary || tasteSummary, window._currentTopArtist || topArtist);
+      }
+    });
+  }
+
+  // Attach interactive click handlers for radio curation
+  container.querySelectorAll('.sonic-artist-row, .sonic-stat-item[data-artist]').forEach(el => {
+    el.addEventListener('click', () => {
+      const art = el.dataset.artist;
+      if (art && typeof startTrackRadio === 'function') {
+        startTrackRadio({ title: art, artist: art });
+        notify(`📻 Starting ${art} Radio station...`);
+      }
+    });
+  });
+
+  container.querySelectorAll('.sonic-meter-row[data-genre]').forEach(el => {
+    el.addEventListener('click', () => {
+      const g = el.dataset.genre;
+      if (g && typeof startTrackRadio === 'function') {
+        startTrackRadio({ title: `${g} Vibes`, artist: g });
+        notify(`✨ Curating ${g} Radio station...`);
+      }
+    });
+  });
 
   shelf.style.display = 'block';
 }
@@ -2696,8 +2797,8 @@ function syncNowPlayingUI(track) {
   updateMediaSessionMetadata(track);
   applyChameleonPalette(track);
   updateFullscreenUI(track);
-  if (window.FolderWallpaperEngine && typeof window.FolderWallpaperEngine.onSongChange === 'function') {
-    window.FolderWallpaperEngine.onSongChange();
+  if (window.linusWallpaperFolder && typeof window.linusWallpaperFolder.onSongChange === 'function') {
+    window.linusWallpaperFolder.onSongChange();
   }
   if (typeof window.refreshTrackWaveform === 'function') {
     window.refreshTrackWaveform(track);
@@ -3058,6 +3159,7 @@ let _lastPrewarmedTrackId = null;
 let _telemetryCurrentTrack = null;
 let _telemetryPlayStartTime = 0;
 let _telemetryMaxTimePlayed = 0;
+let _prewarmedNextVideoId = null;
 let _userSessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
 
 function flushCurrentTrackPlayback(reason = 'change', isExplicitSkip = false) {
@@ -3117,6 +3219,7 @@ function startTrackingTrackPlayback(newTrack, context = 'library') {
   _telemetryCurrentTrack = { ...newTrack };
   _telemetryPlayStartTime = Date.now();
   _telemetryMaxTimePlayed = 0;
+  _prewarmedNextVideoId = null;
 }
 
 function updateRadioModeUI() {
@@ -3241,6 +3344,7 @@ async function populate25SongQueue(forceReset = false) {
   if (!forceReset && remaining >= 6) return;
 
   isFetchingRadioBatch = true;
+  const discoveryMode = state.discovery_mode || (state.user_settings && state.user_settings.discovery_mode) || 'balanced';
   try {
     const res = await api('/api/recommend/batch', {
       method: 'POST',
@@ -3252,23 +3356,26 @@ async function populate25SongQueue(forceReset = false) {
         category: currentTrack.category || '',
         count: 25,
         consecutive_skips: consecutiveSkipCount,
+        discovery_mode: discoveryMode,
         history: (state.history || []).slice(0, 15)
       })
     });
 
     if (res && res.status === 'success' && res.tracks && res.tracks.length > 0) {
-      const newTracks = res.tracks.filter(t => t && t.id && t.id !== currentId);
+      const newTracks = res.tracks.filter(t => t && t.id && t.id !== currentId).map(t => ({ ...t, isUserQueued: false }));
       if (forceReset) {
-        queue = [currentTrack, ...newTracks];
+        // Two-Tier: Preserve user-queued picks when radio resets
+        const preservedUserQueue = queue.slice(currentIndex + 1).filter(t => t && t.isUserQueued);
+        queue = [currentTrack, ...preservedUserQueue, ...newTracks];
         currentIndex = 0;
       } else {
         // Append unique upcoming songs
         const existingIds = new Set(queue.map(t => t.id));
         const toAdd = newTracks.filter(t => !existingIds.has(t.id));
         queue.push(...toAdd);
-        // Cap maximum queue length to 35 to guarantee zero memory bloat
-        if (queue.length > 35) {
-          queue = queue.slice(Math.max(0, currentIndex - 3), currentIndex + 26);
+        // Cap maximum queue length to 45 to guarantee zero memory bloat
+        if (queue.length > 45) {
+          queue = queue.slice(Math.max(0, currentIndex - 3), currentIndex + 30);
           currentIndex = queue.findIndex(t => t.id === currentId);
           if (currentIndex < 0) currentIndex = 0;
         }
@@ -3297,6 +3404,7 @@ function pruneSkippedAffinitiesFromQueue(skippedTrack) {
   const upcoming = queue.slice(currentIndex + 1);
 
   const filteredUpcoming = upcoming.filter(t => {
+    if (t && t.isUserQueued) return true; // NEVER drop user's explicit picks!
     if (removedCount >= maxToRemove) return true;
     const tArtist = (t.artist || '').toLowerCase().trim();
     if (skipArtist && (tArtist === skipArtist || tArtist.includes(skipArtist) || skipArtist.includes(tArtist))) {
@@ -3333,6 +3441,7 @@ async function playNextRecommendedSong() {
   // If queue is empty, fetch and play
   notify(`📻 ${radioMode === 'online' ? 'Discovering next song from YouTube...' : 'Finding best matching local song...'}`);
 
+  const discoveryMode = state.discovery_mode || (state.user_settings && state.user_settings.discovery_mode) || 'balanced';
   try {
     const res = await api('/api/recommend/next', {
       method: 'POST',
@@ -3343,6 +3452,7 @@ async function playNextRecommendedSong() {
         artist: queue[currentIndex]?.artist || '',
         category: queue[currentIndex]?.category || '',
         consecutive_skips: consecutiveSkipCount,
+        discovery_mode: discoveryMode,
         history: (state.history || []).slice(0, 15)
       })
     });
@@ -3864,6 +3974,55 @@ $('#queue-clear-btn')?.addEventListener('click', () => {
   }
 });
 
+// ---- 🎛️ Discovery Dial (Familiar vs. Explorer Queue Tuning) ----
+function setDiscoveryMode(mode, refreshQueue = true) {
+  state.discovery_mode = mode;
+  if (!state.user_settings) state.user_settings = {};
+  state.user_settings.discovery_mode = mode;
+
+  // Persist preference to database
+  api('/api/user-settings', {
+    method: 'POST',
+    body: JSON.stringify({ discovery_mode: mode })
+  }).catch(() => {});
+
+  // Update UI chip buttons in queue drawer and elsewhere
+  document.querySelectorAll('.discovery-chip').forEach(btn => {
+    const isActive = btn.dataset.mode === mode;
+    btn.classList.toggle('active', isActive);
+    if (isActive) {
+      btn.style.background = 'rgba(212,176,122,0.18)';
+      btn.style.color = 'var(--accent)';
+      btn.style.fontWeight = '600';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text-muted)';
+      btn.style.fontWeight = '500';
+    }
+  });
+
+  const modeDescriptions = {
+    comfort: '🛋️ Cozy Familiar: 80% favorites & loved songs',
+    balanced: '⚖️ Balanced Flow: 50/50 mix of familiar & discovery',
+    discovery: '🧭 Deep Explorer: 80% fresh discoveries & hidden gems'
+  };
+  notify(modeDescriptions[mode] || `Queue Aura: ${mode}`);
+
+  if (refreshQueue) {
+    populate25SongQueue(true);
+  }
+}
+window.setDiscoveryMode = setDiscoveryMode;
+
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest('.discovery-chip');
+  if (chip) {
+    e.stopPropagation();
+    const mode = chip.dataset.mode || 'balanced';
+    setDiscoveryMode(mode, true);
+  }
+});
+
 let _draggedQueueIdx = null;
 
 function renderQueue() {
@@ -3922,6 +4081,10 @@ function renderQueue() {
       ? `<img src="${escapeHtml(t.artwork_url)}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,0.3);">`
       : `<div style="width:36px;height:36px;border-radius:6px;background:rgba(255,255,255,0.06);display:grid;place-items:center;color:var(--accent);"><i class="ph-fill ph-music-note"></i></div>`;
 
+    const userBadge = t.isUserQueued 
+      ? `<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(212,176,122,0.22);color:var(--accent);font-weight:600;"><i class="ph-fill ph-pin"></i> Added</span>` 
+      : '';
+
     const badge = t.is_online
       ? `<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(56,189,248,0.18);color:#38bdf8;font-weight:600;"><i class="ph-fill ph-globe"></i> YouTube</span>`
       : `<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(52,211,153,0.18);color:#34d399;font-weight:600;"><i class="ph-fill ph-folder"></i> Local</span>`;
@@ -3952,9 +4115,11 @@ function renderQueue() {
         ${art}
         <div class="q-info" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
           <strong style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${isPlaying ? 'color:var(--accent);' : ''}">${escapeHtml(t.title)}</strong>
-          <div style="display:flex;align-items:center;gap:6px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.artist)}</span>
+            ${userBadge}
             ${badge}
+            ${t.rec_reason ? `<span class="rec-reason-badge" style="font-size:9.5px;padding:1px 6px;border-radius:10px;background:rgba(212,176,122,0.14);color:var(--accent);font-weight:600;display:inline-flex;align-items:center;gap:3px;"><i class="ph-fill ph-sparkle"></i> ${escapeHtml(t.rec_reason)}</span>` : ''}
           </div>
         </div>
         ${actions}
@@ -3973,13 +4138,34 @@ function renderQueue() {
   }
 
   if (upcomingSlice.length > 0) {
-    html += `
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text-muted);margin:16px 0 6px 4px;display:flex;justify-content:space-between;align-items:center;">
-        <span>Up Next</span>
-        <span style="font-size:11px;font-weight:400;opacity:0.85;">${remainingCount} upcoming</span>
-      </div>
-    `;
-    html += upcomingSlice.map((t, idx) => renderTrackItem(t, idx, false)).join('');
+    const userPicks = upcomingSlice.filter(t => t && t.isUserQueued);
+    const radioPicks = upcomingSlice.filter(t => !t || !t.isUserQueued);
+
+    if (userPicks.length > 0) {
+      html += `
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--accent);margin:16px 0 6px 4px;display:flex;justify-content:space-between;align-items:center;">
+          <span><i class="ph-fill ph-pin"></i> Your Queue</span>
+          <span style="font-size:11px;font-weight:400;opacity:0.85;">${userPicks.length} handpicked</span>
+        </div>
+      `;
+      userPicks.forEach(t => {
+        const origIdx = upcomingSlice.indexOf(t);
+        html += renderTrackItem(t, origIdx, false);
+      });
+    }
+
+    if (radioPicks.length > 0) {
+      html += `
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text-muted);margin:16px 0 6px 4px;display:flex;justify-content:space-between;align-items:center;">
+          <span><i class="ph-fill ph-broadcast"></i> Infinite Radio Autoplay</span>
+          <span style="font-size:11px;font-weight:400;opacity:0.85;">${radioPicks.length} upcoming</span>
+        </div>
+      `;
+      radioPicks.forEach(t => {
+        const origIdx = upcomingSlice.indexOf(t);
+        html += renderTrackItem(t, origIdx, false);
+      });
+    }
   }
  
   if (queue.length > 0) {
@@ -4182,6 +4368,11 @@ $('#now-add-playlist')?.addEventListener('click', (e) => {
 });
 
 $('#now-start-radio-btn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  startTrackRadio();
+});
+
+$('#hero-radio-btn')?.addEventListener('click', (e) => {
   e.stopPropagation();
   startTrackRadio();
 });
@@ -4465,12 +4656,7 @@ let currentLyricsData = { found: false, synced: false, lines: [], plain: '' };
 let lastActiveLyricIdx = -1;
 
 $('#hero-lyrics').addEventListener('click', () => {
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-view="lyrics"]')?.classList.add('active');
-  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-  $('#lyrics-view')?.classList.remove('hidden');
-  const t = getActivePlaybackTrack();
-  if (t) loadLyricsInline(t);
+  toggleMiniLyricsDrawer();
 });
 
 $('#lyrics-tab-karaoke').addEventListener('click', () => {
@@ -4504,6 +4690,17 @@ function updateLyricsBadge(source, synced) {
   else if (source === 'custom') label = synced ? 'Custom (Synced)' : 'Custom (Plain)';
   else if (source === 'lyrics.ovh') label = 'Lyrics.ovh (Plain)';
   badge.innerHTML = `<i class="ph${synced ? '-fill ph-lightning' : ' ph-file-text'}"></i> ${label}`;
+
+  const miniBadge = $('#mini-lyrics-source-badge');
+  if (miniBadge) {
+    if (!source || source === 'none') {
+      miniBadge.textContent = 'No Lyrics';
+      miniBadge.style.opacity = '0.5';
+    } else {
+      miniBadge.innerHTML = `<i class="ph${synced ? '-fill ph-lightning' : ' ph-file-text'}"></i> ${label}`;
+      miniBadge.style.opacity = '1';
+    }
+  }
 }
 
 function checkPlainLyricsBanner(show) {
@@ -4525,7 +4722,25 @@ async function loadLyricsInline(track) {
   currentLyricsData = { found: false, synced: false, lines: [], plain: '' };
   checkPlainLyricsBanner(false);
 
-  const stageContainers = [$('#karaoke-lines-container'), $('#fs-karaoke-stream'), $('#stage-lyrics-stream')].filter(Boolean);
+  // Update floating mini lyrics metadata
+  const mTitle = $('#mini-lyrics-title');
+  const mArtist = $('#mini-lyrics-artist');
+  const mThumb = $('#mini-lyrics-thumb');
+  const mThumbPlace = $('#mini-lyrics-thumb-placeholder');
+  if (mTitle) mTitle.textContent = track.title || 'Unknown Title';
+  if (mArtist) mArtist.textContent = track.artist || 'Unknown Artist';
+  if (mThumb && mThumbPlace) {
+    if (track.artwork_url) {
+      mThumb.src = track.artwork_url;
+      mThumb.style.display = 'block';
+      mThumbPlace.style.display = 'none';
+    } else {
+      mThumb.style.display = 'none';
+      mThumbPlace.style.display = 'block';
+    }
+  }
+
+  const stageContainers = [$('#karaoke-lines-container'), $('#fs-karaoke-stream'), $('#stage-lyrics-stream'), $('#floating-lyrics-lines')].filter(Boolean);
   stageContainers.forEach(c => {
     c.innerHTML = '<p class="karaoke-empty">Streaming synchronized lyrics...</p>';
   });
@@ -4591,6 +4806,14 @@ const _lyricsStages = [
     getScroll: () => $('#fs-karaoke-stream'),
     getLines: () => $('#fs-karaoke-stream'),
     getSnapBtn: () => $('#lyrics-snap-pill-fs'),
+    isUserScrolling: false,
+    scrollTimer: null
+  },
+  {
+    name: 'floating',
+    getScroll: () => $('#floating-lyrics-scroll'),
+    getLines: () => $('#floating-lyrics-lines'),
+    getSnapBtn: () => $('#lyrics-snap-pill-floating'),
     isUserScrolling: false,
     scrollTimer: null
   }
@@ -4759,6 +4982,103 @@ function updateKaraokeHighlight(currentTime) {
       }
     });
   });
+}
+
+// ============================================================
+// Floating Mini-Lyrics & Sing-Along (Karaoke HUD) Controller
+// ============================================================
+let _miniLyricsFontSize = parseInt(localStorage.getItem('linus_mini_lyrics_font_size') || '16', 10);
+
+function toggleMiniLyricsDrawer(forceState) {
+  const drawer = document.getElementById('mini-lyrics-drawer');
+  if (!drawer) return;
+  const isOpening = forceState !== undefined ? forceState : !drawer.classList.contains('open');
+  if (isOpening) {
+    drawer.classList.add('open');
+    document.getElementById('mini-lyrics-toggle-btn')?.classList.add('active');
+    const t = getActivePlaybackTrack();
+    if (t) {
+      loadLyricsInline(t);
+    }
+    setTimeout(() => {
+      const stage = _lyricsStages.find(s => s.name === 'floating');
+      if (stage) snapStageToActiveLyric(stage);
+    }, 200);
+  } else {
+    drawer.classList.remove('open');
+    document.getElementById('mini-lyrics-toggle-btn')?.classList.remove('active');
+  }
+}
+window.toggleMiniLyricsDrawer = toggleMiniLyricsDrawer;
+
+function toggleSingMode(forceState) {
+  const drawer = document.getElementById('mini-lyrics-drawer');
+  if (!drawer) return;
+  const isSing = forceState !== undefined ? forceState : !drawer.classList.contains('sing-mode');
+  if (isSing) {
+    drawer.classList.add('sing-mode');
+    localStorage.setItem('linus_sing_mode_enabled', 'true');
+    notify('🎤 Karaoke Sing-Along Mode activated!');
+  } else {
+    drawer.classList.remove('sing-mode');
+    localStorage.setItem('linus_sing_mode_enabled', 'false');
+    notify('Karaoke Sing-Along Mode deactivated.');
+  }
+}
+window.toggleSingMode = toggleSingMode;
+
+function jumpLyricLine(delta) {
+  if (!currentLyricsData || !currentLyricsData.synced || !currentLyricsData.lines || !currentLyricsData.lines.length) {
+    notify('⚠️ Synced lyrics required to jump lines.');
+    return;
+  }
+  const lines = currentLyricsData.lines;
+  let targetIdx = Math.max(0, Math.min(lines.length - 1, (lastActiveLyricIdx || 0) + delta));
+  const targetTime = lines[targetIdx].time;
+  audio.currentTime = Math.max(0, targetTime);
+  if (audio.paused) togglePlayGlobal();
+  updateKaraokeHighlight(audio.currentTime);
+  const stage = _lyricsStages.find(s => s.name === 'floating');
+  if (stage) snapStageToActiveLyric(stage);
+}
+window.jumpLyricLine = jumpLyricLine;
+
+function setMiniLyricsFontSize(size) {
+  _miniLyricsFontSize = Math.max(13, Math.min(26, size));
+  document.documentElement.style.setProperty('--mini-lyrics-size', `${_miniLyricsFontSize}px`);
+  localStorage.setItem('linus_mini_lyrics_font_size', String(_miniLyricsFontSize));
+}
+window.setMiniLyricsFontSize = setMiniLyricsFontSize;
+
+function initMiniLyricsDrawer() {
+  document.getElementById('mini-lyrics-toggle-btn')?.addEventListener('click', () => toggleMiniLyricsDrawer());
+  document.getElementById('mini-lyrics-close')?.addEventListener('click', () => toggleMiniLyricsDrawer(false));
+  document.getElementById('sing-mode-toggle-btn')?.addEventListener('click', () => toggleSingMode());
+
+  document.getElementById('mini-lyrics-expand-btn')?.addEventListener('click', () => {
+    toggleMiniLyricsDrawer(false);
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-view="lyrics"]')?.classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    document.getElementById('lyrics-view')?.classList.remove('hidden');
+    const t = getActivePlaybackTrack();
+    if (t) loadLyricsInline(t);
+  });
+
+  document.getElementById('mini-lyrics-play-btn')?.addEventListener('click', () => {
+    togglePlayGlobal();
+  });
+
+  document.getElementById('mini-lyrics-prev-line')?.addEventListener('click', () => jumpLyricLine(-1));
+  document.getElementById('mini-lyrics-next-line')?.addEventListener('click', () => jumpLyricLine(1));
+
+  document.getElementById('mini-lyrics-font-smaller')?.addEventListener('click', () => setMiniLyricsFontSize(_miniLyricsFontSize - 2));
+  document.getElementById('mini-lyrics-font-larger')?.addEventListener('click', () => setMiniLyricsFontSize(_miniLyricsFontSize + 2));
+
+  if (localStorage.getItem('linus_sing_mode_enabled') === 'true') {
+    document.getElementById('mini-lyrics-drawer')?.classList.add('sing-mode');
+  }
+  setMiniLyricsFontSize(_miniLyricsFontSize);
 }
 
 $('#save-lyrics').addEventListener('click', async () => {
@@ -5079,6 +5399,7 @@ $('#add-folder-btn').addEventListener('click', async () => {
 // ---- Init ---------------------------------------------------
 (async function init() {
   try {
+    initMiniLyricsDrawer();
     const data = await api('/api/library');
     hydrate(data);
   } catch (e) {
@@ -5125,6 +5446,15 @@ audio.addEventListener('timeupdate', () => {
   const heroNpBar = $('#hero-np-bar');
   if (heroNpBar && dur > 0) {
     heroNpBar.style.width = `${Math.min(100, (cur / dur) * 100)}%`;
+  }
+
+  // Predictive Stream Pre-warming: Pre-resolve next YouTube track URL before song ends
+  if (dur > 25 && cur > dur * 0.75 && !_prewarmedNextVideoId && currentIndex + 1 < queue.length) {
+    const nextTrack = queue[currentIndex + 1];
+    if (nextTrack && nextTrack.is_online && nextTrack.video_id) {
+      _prewarmedNextVideoId = nextTrack.video_id;
+      fetch(`/api/youtube/stream-info/${nextTrack.video_id}`).catch(() => {});
+    }
   }
 
   const isSeeking = window.isDraggingSeek || (typeof isDraggingSeek !== 'undefined' ? isDraggingSeek : false);
@@ -5328,10 +5658,14 @@ window.resizeVisualizerCanvases = window.resizeVisualizerCanvases || function() 
 audio.addEventListener('play', () => {
   startAudioVisualizer();
   if (is8DActive) run8DSpatialLoop();
+  const mPlayIcon = document.getElementById('mini-lyrics-play-icon');
+  if (mPlayIcon) mPlayIcon.className = 'ph-fill ph-pause';
 });
 audio.addEventListener('pause', () => {
   if (visualizerRaf) cancelAnimationFrame(visualizerRaf);
   if (spatialRaf) { cancelAnimationFrame(spatialRaf); spatialRaf = null; }
+  const mPlayIcon = document.getElementById('mini-lyrics-play-icon');
+  if (mPlayIcon) mPlayIcon.className = 'ph-fill ph-play';
 });
 
 // ---- Media Session & Lockscreen Controls ---------------------

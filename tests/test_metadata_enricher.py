@@ -81,3 +81,24 @@ def test_enrich_api_endpoints():
     assert "in_progress" in data
     assert "processed" in data
 
+
+def test_sidecar_artwork_extraction(tmp_path):
+    import library_service as ls
+    # Create a mock video file and sidecar .webp file
+    video_file = tmp_path / "MySong.mp4"
+    video_file.write_bytes(b"mock video data")
+    sidecar_img = tmp_path / "MySong.webp"
+    sidecar_img.write_bytes(b"mock webp image data")
+
+    # Verify track meta detects has_artwork=True
+    meta = ls.extract_track_meta(video_file)
+    assert meta["has_artwork"] is True
+
+    # Verify extract_artwork_bytes returns the image data and mime type
+    result = ls.extract_artwork_bytes(str(video_file))
+    assert result is not None
+    data, mime = result
+    assert data == b"mock webp image data"
+    assert mime == "image/webp"
+
+

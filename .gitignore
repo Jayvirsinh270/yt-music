@@ -12,8 +12,12 @@
 *.sqlite3
 *.sql
 *.dump
+*.bak
+*.backup
+*.db.bak
 linus.db
 linus.db-*
+linus.db.bak
 linus_state.json
 
 # ─── Media, Cache, and User Downloads ────────────────────────────────────────
@@ -105,3 +109,8 @@ google-services.json
 Thumbs.db
 desktop.ini
 .impeccable/
+
+# ─── Bundled FFmpeg Binaries ──────────────────────────────────────────────────
+ffmpeg-9.0.2-full_build/
+ffmpeg*/
+bin/

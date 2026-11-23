@@ -49,32 +49,42 @@ def save_state(state):
 # ---------------------------------------------------------------------------
 
 def extract_artwork_bytes(filepath: str) -> tuple[bytes, str] | None:
-    """Extract embedded album art image bytes & mime type from audio file."""
+    """Extract embedded album art image bytes & mime type from audio file, or sidecar image."""
     try:
         f = mutagen.File(filepath)
-        if f is None or not getattr(f, "tags", None):
-            return None
-        tags = f.tags
+        if f is not None and getattr(f, "tags", None):
+            tags = f.tags
 
-        # ID3 (MP3)
-        for k in tags.keys():
-            if k.startswith("APIC"):
-                apic = tags[k]
-                mime = getattr(apic, "mime", "image/jpeg")
-                return apic.data, mime
+            # ID3 (MP3)
+            for k in tags.keys():
+                if k.startswith("APIC"):
+                    apic = tags[k]
+                    mime = getattr(apic, "mime", "image/jpeg")
+                    return apic.data, mime
 
-        # MP4 / M4A (covr)
-        if "covr" in tags and tags["covr"]:
-            covr = tags["covr"][0]
-            mime = "image/png" if getattr(covr, "imageformat", None) == 14 else "image/jpeg"
-            return bytes(covr), mime
+            # MP4 / M4A (covr)
+            if "covr" in tags and tags["covr"]:
+                covr = tags["covr"][0]
+                mime = "image/png" if getattr(covr, "imageformat", None) == 14 else "image/jpeg"
+                return bytes(covr), mime
 
-        # FLAC
-        if hasattr(f, "pictures") and f.pictures:
-            pic = f.pictures[0]
-            return pic.data, getattr(pic, "mime", "image/jpeg")
+            # FLAC
+            if hasattr(f, "pictures") and f.pictures:
+                pic = f.pictures[0]
+                return pic.data, getattr(pic, "mime", "image/jpeg")
     except Exception:
         pass
+
+    # Sidecar image fallback (e.g. .webp, .jpg, .jpeg, .png alongside video or audio)
+    try:
+        p = Path(filepath)
+        for ext, mime in [(".webp", "image/webp"), (".jpg", "image/jpeg"), (".jpeg", "image/jpeg"), (".png", "image/png")]:
+            sidecar = p.with_suffix(ext)
+            if sidecar.is_file():
+                return sidecar.read_bytes(), mime
+    except Exception:
+        pass
+
     return None
 
 
@@ -173,6 +183,12 @@ def extract_track_meta(path: Path) -> dict:
                             break
     except Exception:
         pass
+
+    if not has_art:
+        for ext in (".webp", ".jpg", ".jpeg", ".png"):
+            if path.with_suffix(ext).is_file():
+                has_art = True
+                break
 
     # 2. Filename-based artist separation if artist was missing
     if " - " in title and (artist == "Local collection" or not artist):

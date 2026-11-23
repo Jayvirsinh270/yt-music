@@ -1,0 +1,66 @@
+<!-- Floating Mini-Lyrics & Sing-Along (Karaoke HUD) Drawer -->
+<div class="mini-lyrics-drawer" id="mini-lyrics-drawer" aria-label="Floating Sing-Along Lyrics Drawer">
+  <div class="mini-lyrics-header">
+    <div class="mini-lyrics-track-info">
+      <div class="mini-lyrics-thumb-wrap">
+        <img id="mini-lyrics-thumb" src="" alt="Album Art" style="display:none;">
+        <i class="ph-fill ph-music-note" id="mini-lyrics-thumb-placeholder"></i>
+      </div>
+      <div class="mini-lyrics-meta">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <h3 class="mini-lyrics-title" id="mini-lyrics-title">Nothing Playing</h3>
+          <span class="mini-lyrics-source-badge" id="mini-lyrics-source-badge">No Lyrics</span>
+        </div>
+        <p class="mini-lyrics-artist" id="mini-lyrics-artist">Select a song to start</p>
+      </div>
+    </div>
+    <div class="mini-lyrics-header-actions">
+      <!-- Sing Mode Toggle (Karaoke Focus) -->
+      <button class="mini-lyrics-action-btn" id="sing-mode-toggle-btn" title="Toggle Karaoke Sing-Along Mode">
+        <i class="ph-fill ph-microphone-stage"></i>
+        <span>Sing Mode</span>
+      </button>
+      <!-- Expand to Full Lyrics Studio -->
+      <button class="mini-lyrics-icon-btn" id="mini-lyrics-expand-btn" title="Open Full Lyrics Studio">
+        <i class="ph-bold ph-arrows-out-simple"></i>
+      </button>
+      <!-- Close Drawer -->
+      <button class="mini-lyrics-icon-btn" id="mini-lyrics-close" title="Close Floating Lyrics (L)">
+        <i class="ph ph-x"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Synchronized Scrolling Live Stage -->
+  <div class="mini-lyrics-stage" id="floating-lyrics-scroll">
+    <div class="mini-lyrics-lines-container" id="floating-lyrics-lines">
+      <p class="karaoke-empty">Play a song to stream live synchronized sing-along lyrics.</p>
+    </div>
+    <!-- Floating Return to Current Lyric Snap Pill -->
+    <button class="lyrics-snap-pill hidden" id="lyrics-snap-pill-floating" title="Return to current playing lyric">
+      <i class="ph-fill ph-arrow-down-left"></i>
+      <span>Snap to Current Lyric</span>
+    </button>
+  </div>
+
+  <!-- Sing-Along Practice Controls Bar -->
+  <div class="mini-lyrics-footer">
+    <div class="mini-lyrics-nav-controls">
+      <button class="mini-lyrics-nav-btn" id="mini-lyrics-prev-line" title="Jump to Previous Line (Practice)">
+        <i class="ph-fill ph-skip-back"></i>
+        <span>Prev Line</span>
+      </button>
+      <button class="mini-lyrics-play-pause-btn" id="mini-lyrics-play-btn" title="Play / Pause">
+        <i class="ph-fill ph-play" id="mini-lyrics-play-icon"></i>
+      </button>
+      <button class="mini-lyrics-nav-btn" id="mini-lyrics-next-line" title="Jump to Next Line">
+        <span>Next Line</span>
+        <i class="ph-fill ph-skip-forward"></i>
+      </button>
+    </div>
+    <div class="mini-lyrics-font-controls">
+      <button class="mini-lyrics-font-btn" id="mini-lyrics-font-smaller" title="Smaller lyrics font">A-</button>
+      <button class="mini-lyrics-font-btn" id="mini-lyrics-font-larger" title="Larger lyrics font">A+</button>
+    </div>
+  </div>
+</div>

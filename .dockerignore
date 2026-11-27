@@ -1,0 +1,77 @@
+# Git & GitHub metadata
+.git/
+.github/
+.gitignore
+.impeccable/
+
+# Python virtual environments & caches
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.egg-info/
+*.egg
+build/
+dist/
+
+# User media, caches & local databases
+downloads/
+stream_cache/
+lyrics_cache/
+media/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+linus_state.json*
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+*.mp4
+*.mkv
+*.webm
+
+# Secrets & credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.token
+token.json
+tokens/
+credentials.json
+client_secret*.json
+*cookies*.txt
+*.cookie
+*.cookies
+
+# Local FFmpeg binaries & mobile / docs / tests
+ffmpeg-*/
+bin/
+mobile/
+tests/
+docs/
+
+# IDE & OS artifacts
+.vscode/
+.idea/
+*.log
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

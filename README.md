@@ -7,6 +7,9 @@
 [![Flutter](https://img.shields.io/badge/Flutter-Android-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![PWA](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
+[![CI](https://img.shields.io/github/actions/workflow/status/Jayvirsinh270/yt-music/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white)](https://github.com/Jayvirsinh270/yt-music/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/Jayvirsinh270/yt-music?style=for-the-badge&logo=github&label=Release)](https://github.com/Jayvirsinh270/yt-music/releases/latest)
+[![GitHub Stars](https://img.shields.io/github/stars/Jayvirsinh270/yt-music?style=for-the-badge&logo=github)](https://github.com/Jayvirsinh270/yt-music/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
 
@@ -14,6 +17,7 @@
   <strong>Your private, high-fidelity music cloud. Seamlessly blends local audio libraries with online YouTube streaming, real-time synchronized karaoke lyrics, audiophile DSP effects, and intelligent mood-based discovery.</strong>
 </p>
 
+[Screenshots](#-screenshots--demo) •
 [Key Features](#-key-features) •
 [Quick Start](#-quick-start) •
 [Docker Deployment](#-docker-deployment) •
@@ -46,6 +50,22 @@ Whether hosting on a local workstation, a home Raspberry Pi, or a remote VPS, Li
 • Automatic ID3 Tagging        • Lossless Media Downloads        • Vocal Remover / Karaoke
 • Instant Fuzzy Search         • Smart YouTube Radio             • 10-Band EQ & Auto-DJ
 ```
+
+---
+
+## 📸 Screenshots & Demo
+
+> Capture screenshots using the guide in [docs/screenshots/README.md](docs/screenshots/README.md) and uncomment the showcase block below once the image files are in place.
+
+<!--
+<p align="center">
+  <img src="docs/screenshots/hero-player.png" alt="Linus Music Player Desktop Interface" width="100%" />
+</p>
+
+| Cinema Mode & Karaoke Lyrics | Vibe Compass & Sound Rewind | Flutter Android Companion |
+|:---:|:---:|:---:|
+| ![Cinema Mode](docs/screenshots/cinema-lyrics.png) | ![Vibe Compass](docs/screenshots/vibe-compass.png) | ![Android App](docs/screenshots/mobile-app.png) |
+-->
 
 ---
 
@@ -200,11 +220,30 @@ http://127.0.0.1:5000
 
 ## 🐳 Docker Deployment
 
-Run Linus in an isolated container with persistent volumes for libraries, caches, and databases.
+Run Linus in an isolated container with persistent volumes for libraries, caches, and databases. Multi-architecture images (`linux/amd64` and `linux/arm64` for Raspberry Pi / ARM servers) are published automatically to GitHub Container Registry.
 
-### Using Docker Compose (Recommended)
+### Option A: Prebuilt Image from GHCR (Fastest)
 
-1. Review and adjust `docker-compose.yml` volume mounts:
+Create an empty database file first (so Docker binds a file rather than creating a directory) and start the container:
+
+```bash
+mkdir -p downloads stream_cache lyrics_cache
+touch linus.db
+
+docker run -d \
+  --name linus-music \
+  --restart unless-stopped \
+  -p 5000:5000 \
+  -v "$(pwd)/downloads:/app/downloads" \
+  -v "$(pwd)/stream_cache:/app/stream_cache" \
+  -v "$(pwd)/lyrics_cache:/app/lyrics_cache" \
+  -v "$(pwd)/linus.db:/app/linus.db" \
+  ghcr.io/jayvirsinh270/yt-music:latest
+```
+
+### Option B: Build Locally with Docker Compose
+
+1. Create `linus.db` if it does not exist yet (`touch linus.db`), then review and adjust `docker-compose.yml` volume mounts:
 ```yaml
 version: "3.9"
 
@@ -249,7 +288,10 @@ Linus includes a native mobile client in the `mobile/` directory built with Flut
 - Local and remote offline playback
 - Sleek modern UI inspired by Spotify and Apple Music
 
-### Build & Run
+### Download Prebuilt APK
+Grab the latest release APK directly from the [GitHub Releases](https://github.com/Jayvirsinh270/yt-music/releases/latest) page—no Flutter SDK required.
+
+### Build & Run from Source
 ```bash
 cd mobile
 flutter pub get
@@ -340,6 +382,8 @@ Contributions make the open-source community an inspiring place to learn, create
 5. Open a Pull Request
 
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for detailed code standards and architecture guidelines.
+
+If you enjoy **Linus**, consider giving the repository a ⭐ on GitHub or sharing your theme presets and feature ideas in [Issues](https://github.com/Jayvirsinh270/yt-music/issues)!
 
 ---
 

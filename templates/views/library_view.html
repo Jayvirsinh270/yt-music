@@ -16,7 +16,7 @@
             <p id="rec-greeting-sub" class="rec-greeting-sub">Your personal sanctuary · Curated listening</p>
           </div>
           <div style="display:flex;align-items:center;gap:10px;">
-            <button class="rewind-launch-btn" id="open-weekly-rewind-btn" title="View your Weekly Sound Rewind & Musical Persona">
+            <button class="rewind-launch-btn" id="open-weekly-rewind-btn" title="View your Weekly Sound Rewind & Musical Persona" onclick="if(typeof openWeeklyRewindModal==='function'){openWeeklyRewindModal();}else if(window.openWeeklyRewindModal){window.openWeeklyRewindModal();}">
               <i class="ph-bold ph-calendar-star"></i>
               <span>Weekly Rewind</span>
             </button>

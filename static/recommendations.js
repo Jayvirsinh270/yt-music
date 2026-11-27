@@ -10,6 +10,11 @@
   const $ = window.$ || (sel => document.querySelector(sel));
   const $$ = window.$$ || (sel => document.querySelectorAll(sel));
   const escapeHtml = window.escapeHtml || (v => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])));
+  const safeApi = window.api || (typeof api === 'function' ? api : async (url, opts={}) => {
+    const res = await fetch(url, { headers: {'Content-Type':'application/json'}, ...opts });
+    return await res.json();
+  });
+  const safeNotify = window.notify || (typeof notify === 'function' ? notify : (msg => console.log(msg)));
 
 // ============================================================================
 // 📅 Feature 6: Weekly Sound Rewind & Persona Summary Engine
@@ -32,7 +37,7 @@ async function openWeeklyRewindModal() {
   }
 
   try {
-    const res = await api('/api/rewind/weekly');
+    const res = await safeApi('/api/rewind/weekly');
     if (!res || res.status !== 'success') throw new Error(res?.error || 'Failed to fetch rewind data');
 
     _lastRewindData = res;
@@ -42,7 +47,7 @@ async function openWeeklyRewindModal() {
     if (container) container.classList.remove('hidden');
   } catch (err) {
     console.error('Weekly rewind fetch error:', err);
-    notify('⚠️ Unable to load weekly sound rewind.');
+    safeNotify('⚠️ Unable to load weekly sound rewind.');
     if (spinner) spinner.innerHTML = `<p style="color:#ff6b6b;margin-top:12px;">Failed to load rewind stats.</p>`;
   }
 }
@@ -56,6 +61,10 @@ function closeWeeklyRewindModal() {
     modal.removeAttribute('open');
   }
 }
+
+// Expose early so handlers and inline HTML can reach them immediately
+window.openWeeklyRewindModal = openWeeklyRewindModal;
+window.closeWeeklyRewindModal = closeWeeklyRewindModal;
 
 function renderWeeklyRewindModal(data) {
   const timeframeEl = document.getElementById('rewind-modal-timeframe');
@@ -142,17 +151,26 @@ function renderWeeklyRewindModal(data) {
 
 function initWeeklyRewind() {
   const openBtn = document.getElementById('open-weekly-rewind-btn');
-  if (openBtn) {
-    openBtn.addEventListener('click', openWeeklyRewindModal);
+  if (openBtn && !openBtn._boundRewind) {
+    openBtn._boundRewind = true;
+    openBtn.addEventListener('click', (e) => {
+      if (e) e.preventDefault();
+      openWeeklyRewindModal();
+    });
   }
 
   const closeBtn = document.getElementById('rewind-modal-close');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeWeeklyRewindModal);
+  if (closeBtn && !closeBtn._boundRewind) {
+    closeBtn._boundRewind = true;
+    closeBtn.addEventListener('click', (e) => {
+      if (e) e.preventDefault();
+      closeWeeklyRewindModal();
+    });
   }
 
   const modal = document.getElementById('weekly-rewind-modal');
-  if (modal) {
+  if (modal && !modal._boundRewind) {
+    modal._boundRewind = true;
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeWeeklyRewindModal();
     });
@@ -160,19 +178,20 @@ function initWeeklyRewind() {
 
   // Play Weekly Mix
   const playMixBtn = document.getElementById('rewind-play-mix-btn');
-  if (playMixBtn) {
+  if (playMixBtn && !playMixBtn._boundRewind) {
+    playMixBtn._boundRewind = true;
     playMixBtn.addEventListener('click', () => {
       if (!_lastRewindData || !_lastRewindData.top_tracks || !_lastRewindData.top_tracks.length) {
-        notify('No tracks found in Weekly Rewind.');
+        safeNotify('No tracks found in Weekly Rewind.');
         return;
       }
       const topTracks = _lastRewindData.top_tracks;
-      queue = [...topTracks];
-      currentIndex = 0;
-      renderQueue();
-      playById(topTracks[0].id);
+      if (window.queue) window.queue = [...topTracks];
+      if (typeof window.currentIndex !== 'undefined') window.currentIndex = 0;
+      if (typeof renderQueue === 'function') renderQueue();
+      if (typeof playById === 'function') playById(topTracks[0].id);
       closeWeeklyRewindModal();
-      notify(`▶ Streaming your Weekly Top ${topTracks.length} Mix!`);
+      safeNotify(`▶ Streaming your Weekly Top ${topTracks.length} Mix!`);
     });
   }
 
@@ -182,7 +201,7 @@ function initWeeklyRewind() {
     savePlaylistBtn._rewindBound = true;
     savePlaylistBtn.addEventListener('click', async () => {
       if (!_lastRewindData || !_lastRewindData.top_tracks || !_lastRewindData.top_tracks.length) {
-        notify('⚠️ No tracks found in Weekly Rewind to save.');
+        safeNotify('⚠️ No tracks found in Weekly Rewind to save.');
         return;
       }
       if (typeof window.saveMixAsPlaylist === 'function') {
@@ -193,7 +212,8 @@ function initWeeklyRewind() {
 
   // Share Summary (Copy to clipboard)
   const copyBtn = document.getElementById('rewind-copy-summary-btn');
-  if (copyBtn) {
+  if (copyBtn && !copyBtn._boundRewind) {
+    copyBtn._boundRewind = true;
     copyBtn.addEventListener('click', async () => {
       if (!_lastRewindData) return;
       const d = _lastRewindData;
@@ -211,21 +231,23 @@ function initWeeklyRewind() {
 
       try {
         await navigator.clipboard.writeText(text);
-        notify('📋 Weekly Sound Rewind copied to clipboard!');
+        safeNotify('📋 Weekly Sound Rewind copied to clipboard!');
       } catch (err) {
-        notify('⚠️ Could not copy to clipboard.');
+        safeNotify('⚠️ Could not copy to clipboard.');
       }
     });
   }
 
   const exportBtn = document.getElementById('rewind-export-card-btn');
-  if (exportBtn) {
+  if (exportBtn && !exportBtn._boundRewind) {
+    exportBtn._boundRewind = true;
     exportBtn.addEventListener('click', () => {
       if (!_lastRewindData) return;
       exportRewindVisualCard(_lastRewindData);
     });
   }
 }
+window.initWeeklyRewind = initWeeklyRewind;
 
 function exportRewindVisualCard(d) {
   const canvas = document.createElement('canvas');
@@ -1636,6 +1658,12 @@ function renderDashboardUpNext() {
       loadDashboardRecommendations();
     }
     renderDashboardUpNext();
+    if (typeof initWeeklyRewind === 'function') {
+      initWeeklyRewind();
+    }
+    if (typeof initStreakHeatmap === 'function') {
+      initStreakHeatmap();
+    }
     if (typeof initVibeCompass === 'function') {
       initVibeCompass();
     }
@@ -1645,10 +1673,14 @@ function renderDashboardUpNext() {
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+      if (typeof initWeeklyRewind === 'function') initWeeklyRewind();
+      if (typeof initStreakHeatmap === 'function') initStreakHeatmap();
       if (typeof initVibeCompass === 'function') initVibeCompass();
     });
   } else {
     setTimeout(() => {
+      if (typeof initWeeklyRewind === 'function') initWeeklyRewind();
+      if (typeof initStreakHeatmap === 'function') initStreakHeatmap();
       if (typeof initVibeCompass === 'function') initVibeCompass();
     }, 10);
   }

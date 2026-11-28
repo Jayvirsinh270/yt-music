@@ -1001,12 +1001,14 @@
   async function fetchLyricsForTrack(track) {
     lyricsWrapper.innerHTML = `<p class="lyrics-placeholder">Loading synced lyrics...</p>`;
     state.syncedLyrics = [];
+    state.lyricsOffset = 0;
 
     try {
-      const q = `/api/lyrics?track_id=${encodeURIComponent(track.id)}&artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}&duration=${track.duration}`;
+      const q = `/api/lyrics?track_id=${encodeURIComponent(track.id)}&artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}&duration=${encodeURIComponent(track.duration || 0)}`;
       const res = await fetch(q);
       const data = await res.json();
 
+      state.lyricsOffset = Number(data.offset || 0) || 0;
       if (data.synced && Array.isArray(data.lines) && data.lines.length > 0) {
         state.syncedLyrics = data.lines;
         renderLyricsLines(data.lines);
@@ -1028,7 +1030,7 @@
       p.id = `lyric-line-${idx}`;
       p.textContent = line.text;
       p.addEventListener('click', () => {
-        audio.currentTime = line.time;
+        audio.currentTime = Math.max(0, line.time + (state.lyricsOffset || 0));
         haptic(8);
       });
       lyricsWrapper.appendChild(p);
@@ -1037,10 +1039,11 @@
 
   function syncLyricsPlayback(currentTime) {
     if (state.syncedLyrics.length === 0) return;
+    const effectiveTime = currentTime - (state.lyricsOffset || 0);
 
     let activeIdx = -1;
     for (let i = 0; i < state.syncedLyrics.length; i++) {
-      if (currentTime >= state.syncedLyrics[i].time) {
+      if (effectiveTime >= state.syncedLyrics[i].time) {
         activeIdx = i;
       } else {
         break;

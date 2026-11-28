@@ -29,7 +29,13 @@ def metadata_status():
         return {"connected": False, "database": "SQLite (linus.db)", "host": "local", "track_count": 0}
 
 import downloader as dl
-from lyrics_provider import fetch_lyrics, search_lyrics_candidates, save_custom_lyrics, align_and_cache_lyrics
+from lyrics_provider import (
+    fetch_lyrics,
+    search_lyrics_candidates,
+    save_custom_lyrics,
+    align_and_cache_lyrics,
+    clear_cached_lyrics,
+)
 import db_store as db
 import recommendation_engine as rec
 import quotes_store as quotes
@@ -769,24 +775,43 @@ def cancel_download(job_id):
 
 @app.get("/api/lyrics")
 def get_lyrics():
-    """Auto-fetch lyrics (synced LRC + plain) with multi-tier fallback & caching."""
+    """Auto-fetch lyrics (synced LRC + plain) with duration-aware multi-tier fallback & caching."""
     artist = request.args.get("artist", "").strip()
     title = request.args.get("title", "").strip()
     file_path = request.args.get("file_path", "").strip()
+    track_id = request.args.get("track_id", "").strip() or file_path
+    effective_path = file_path or track_id
+    force_refresh = request.args.get("force", "").strip().lower() in ("1", "true", "yes")
+    try:
+        duration = float(request.args.get("duration", 0) or 0)
+    except (TypeError, ValueError):
+        duration = 0.0
     if not title:
         return jsonify({"error": "Provide track title."}), 400
-    res = fetch_lyrics(artist, title, file_path=file_path)
+    res = dict(fetch_lyrics(
+        artist,
+        title,
+        file_path=effective_path,
+        duration=duration,
+        force_refresh=force_refresh,
+    ))
+    res["offset"] = db.get_lyrics_offset(track_id)
     return jsonify(res)
 
 
 @app.get("/api/lyrics/search")
 def search_lyrics():
-    """Search multiple lyrics providers (LRCLIB, NetEase) for candidate matches."""
+    """Search multiple lyrics providers (LRCLIB, NetEase, YouTube CC) for candidate matches."""
     query = request.args.get("q", "").strip()
-    if not query:
+    track_id = request.args.get("track_id", "").strip()
+    try:
+        duration = float(request.args.get("duration", 0) or 0)
+    except (TypeError, ValueError):
+        duration = 0.0
+    if not query and not track_id.startswith("yt:"):
         return jsonify({"candidates": []})
-    limit = min(int(request.args.get("limit", 8)), 15)
-    candidates = search_lyrics_candidates(query, limit=limit)
+    limit = min(int(request.args.get("limit", 12)), 20)
+    candidates = search_lyrics_candidates(query, limit=limit, target_duration=duration, track_id=track_id)
     return jsonify({"candidates": candidates, "query": query})
 
 
@@ -802,8 +827,10 @@ def apply_lyrics():
     if not track_id or not content:
         return jsonify({"error": "Missing track_id or content."}), 400
 
-    saved = save_custom_lyrics(track_id, artist, title, content)
-    
+    saved = dict(save_custom_lyrics(track_id, artist, title, content))
+    # Reset prior offset since the user chose a different lyrics version
+    saved["offset"] = db.set_lyrics_offset(track_id, 0.0)
+
     # Save to state as well
     state = load_state()
     lyrics_map = state.setdefault("lyrics", {})
@@ -825,14 +852,47 @@ def save_lyrics_endpoint():
     if not track_id:
         return jsonify({"error": "Missing track_id."}), 400
 
-    saved = save_custom_lyrics(track_id, artist, title, content)
-    
+    saved = dict(save_custom_lyrics(track_id, artist, title, content))
+    saved["offset"] = db.get_lyrics_offset(track_id)
+
     state = load_state()
     lyrics_map = state.setdefault("lyrics", {})
     lyrics_map[track_id] = content
     save_state(state)
 
     return jsonify({"success": True, "lyrics": saved})
+
+
+@app.post("/api/lyrics/offset")
+def set_lyrics_offset_endpoint():
+    """Persist per-track lyric sync offset in seconds."""
+    data = request.get_json(silent=True) or {}
+    track_id = (data.get("track_id") or "").strip()
+    if not track_id:
+        return jsonify({"error": "Missing track_id."}), 400
+    try:
+        offset = float(data.get("offset", 0.0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid offset value."}), 400
+    saved_offset = db.set_lyrics_offset(track_id, offset)
+    return jsonify({"success": True, "track_id": track_id, "offset": saved_offset})
+
+
+@app.post("/api/lyrics/clear")
+def clear_lyrics_endpoint():
+    """Clear custom and cached lyrics (plus sync offset) for a track."""
+    data = request.get_json(silent=True) or {}
+    track_id = (data.get("track_id") or "").strip()
+    artist = (data.get("artist") or "").strip()
+    title = (data.get("title") or "").strip()
+    if not track_id and not title:
+        return jsonify({"error": "Missing track_id or title."}), 400
+
+    if track_id:
+        db.set_custom_lyrics(track_id, "")
+        db.set_lyrics_offset(track_id, 0.0)
+    clear_cached_lyrics(track_id, artist, title)
+    return jsonify({"success": True})
 
 
 @app.post("/api/lyrics/align")
@@ -850,7 +910,7 @@ def align_lyrics_endpoint():
     if not track_id:
         return jsonify({"error": "Missing track_id."}), 400
 
-    # 1. Resolve Audio File Path
+    # 1. Resolve Local Audio File Path
     audio_path = None
     if track_id.startswith("yt:"):
         clean_id = track_id.replace("yt:", "").strip()
@@ -858,14 +918,10 @@ def align_lyrics_endpoint():
         if cached:
             audio_path = str(cached[0])
         else:
-            # Synchronously download/cache audio stream
+            # Synchronously download/cache audio stream locally for alignment
             cached_path = dl.cache_stream_audio(clean_id, background=False)
             if cached_path and cached_path.exists():
                 audio_path = str(cached_path)
-            else:
-                stream_info = dl.extract_stream_url(track_id)
-                if stream_info and stream_info.get("url"):
-                    audio_path = stream_info["url"]
     else:
         # Local file path
         p = Path(track_id)
@@ -879,7 +935,7 @@ def align_lyrics_endpoint():
                 audio_path = str(Path(track["id"]).resolve())
 
     if not audio_path:
-        return jsonify({"error": "Could not locate or cache audio for this track to align."}), 404
+        return jsonify({"error": "Could not locate or cache local audio for this track to align."}), 404
 
     # 2. Resolve Plain Lyrics Content
     plain_lyrics = content
@@ -897,7 +953,8 @@ def align_lyrics_endpoint():
         return jsonify({"error": "No plain lyrics text found to align. Please search or enter lyrics first."}), 400
 
     try:
-        res = align_and_cache_lyrics(artist, title, track_id, audio_path, plain_lyrics)
+        res = dict(align_and_cache_lyrics(artist, title, track_id, audio_path, plain_lyrics))
+        res["offset"] = db.set_lyrics_offset(track_id, 0.0)
 
         # Save synced LRC to state
         state = load_state()

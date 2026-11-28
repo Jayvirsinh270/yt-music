@@ -16,6 +16,36 @@
             </div>
           </div>
 
+          <!-- Sync Offset Fine-Tune Bar -->
+          <div class="lyrics-sync-bar" id="lyrics-sync-bar">
+            <div class="lyrics-sync-bar-left">
+              <span class="lyrics-sync-label"><i class="ph ph-clock-clockwise"></i> Sync Offset</span>
+              <div class="lyrics-offset-group" role="group" aria-label="Lyric Timing Offset">
+                <button type="button" class="lyrics-offset-btn" data-delta="-0.5" title="Shift lyrics 0.5s earlier (use when lyrics are behind)">-0.5s</button>
+                <button type="button" class="lyrics-offset-btn" data-delta="-0.1" title="Shift lyrics 0.1s earlier">-0.1s</button>
+                <button type="button" class="lyrics-offset-readout" id="lyrics-offset-display" title="Click to reset sync offset to 0.0s">0.0s</button>
+                <button type="button" class="lyrics-offset-btn" data-delta="0.1" title="Delay lyrics 0.1s later">+0.1s</button>
+                <button type="button" class="lyrics-offset-btn" data-delta="0.5" title="Delay lyrics 0.5s later (use when lyrics are ahead)">+0.5s</button>
+              </div>
+              <span class="lyrics-sync-hint">Earlier (−) / Later (+)</span>
+            </div>
+            <button type="button" class="btn-secondary lyrics-refetch-quick-btn" id="lyrics-refetch-quick-btn" title="Bypass cache and re-fetch best matching lyrics">
+              <i class="ph ph-arrows-clockwise"></i> Re-fetch
+            </button>
+          </div>
+
+          <!-- Timing / Variant Mismatch Warning Banner -->
+          <div id="lyrics-variant-warning" class="lyrics-variant-warning hidden">
+            <div class="lyrics-variant-warning-text">
+              <i class="ph-fill ph-warning-circle"></i>
+              <span id="lyrics-variant-warning-msg"></span>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+              <button type="button" class="btn-secondary" id="lyrics-warning-search-btn" style="padding:5px 12px;font-size:12px;">Switch Version</button>
+              <button type="button" class="btn-primary" id="lyrics-warning-align-btn" style="padding:5px 12px;font-size:12px;">Auto-Sync</button>
+            </div>
+          </div>
+
           <!-- Plain Lyrics Auto-Sync Callout Banner -->
           <div id="lyrics-plain-sync-banner" class="lyrics-plain-sync-banner hidden">
             <div class="lyrics-plain-banner-info">
@@ -43,9 +73,10 @@
           
           <div class="lyrics-editor-wrap hidden" id="lyrics-editor-wrap">
             <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
-              <button class="btn-secondary" id="fetch-lyrics-btn"><i class="ph ph-arrows-clockwise"></i> Auto-fetch</button>
+              <button class="btn-secondary" id="fetch-lyrics-btn" title="Bypass cache and re-fetch lyrics online"><i class="ph ph-arrows-clockwise"></i> Re-fetch Online</button>
               <button class="btn-secondary" id="search-lyrics-btn-edit"><i class="ph ph-magnifying-glass"></i> Search online</button>
               <button class="btn-secondary auto-sync-lyrics-btn" id="editor-auto-sync-btn" title="Align plain lyrics to audio with AI forced alignment"><i class="ph-fill ph-lightning"></i> ⚡ Auto-Sync Lyrics to Audio</button>
+              <button class="btn-secondary" id="clear-lyrics-btn" title="Clear cached and custom lyrics for this track"><i class="ph ph-trash"></i> Clear Cache</button>
               <button class="btn-primary" id="save-lyrics"><i class="ph ph-floppy-disk"></i> Save lyrics</button>
             </div>
             <textarea class="lyrics-editor" id="lyrics-editor" placeholder="Lyrics will appear here..."></textarea>

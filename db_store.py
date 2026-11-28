@@ -10,7 +10,7 @@ import shutil
 import sqlite3
 import threading
 import time
-from typing import Any
+from typing import Any, Optional
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -767,6 +767,42 @@ def set_custom_lyrics(track_id: str, content: str):
                 conn.execute("DELETE FROM custom_lyrics WHERE track_id = ?", (track_id,))
     except Exception:
         pass
+
+
+def get_lyrics_offsets() -> dict[str, float]:
+    """Return map of track_id -> sync offset in seconds from user_settings."""
+    raw = get_user_setting("lyrics_offsets", {})
+    if not isinstance(raw, dict):
+        return {}
+    cleaned = {}
+    for k, v in raw.items():
+        try:
+            cleaned[str(k)] = round(float(v), 2)
+        except (TypeError, ValueError):
+            continue
+    return cleaned
+
+
+def get_lyrics_offset(track_id: str) -> float:
+    """Return saved sync offset in seconds for a specific track_id (default 0.0)."""
+    if not track_id:
+        return 0.0
+    return float(get_lyrics_offsets().get(track_id, 0.0))
+
+
+def set_lyrics_offset(track_id: str, offset: float) -> float:
+    """Persist per-track sync offset in seconds into user_settings."""
+    if not track_id:
+        return 0.0
+    clamped = round(max(-120.0, min(120.0, float(offset))), 2)
+    offsets = get_lyrics_offsets()
+    if abs(clamped) < 0.01:
+        offsets.pop(track_id, None)
+        clamped = 0.0
+    else:
+        offsets[track_id] = clamped
+    set_user_setting("lyrics_offsets", offsets)
+    return clamped
 
 
 def add_library_folder(folder_path: str) -> bool:

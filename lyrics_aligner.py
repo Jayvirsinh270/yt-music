@@ -20,17 +20,18 @@ _whisper_model = None
 
 
 def get_whisper_model():
-    """Lazy-load and cache the faster-whisper tiny model singleton."""
+    """Lazy-load and cache the faster-whisper model singleton (configurable via LINUS_WHISPER_MODEL)."""
     global _whisper_model
     if _whisper_model is None:
         try:
             from faster_whisper import WhisperModel
-            logger.info("Initializing faster-whisper (tiny int8) for forced alignment...")
+            model_name = os.environ.get("LINUS_WHISPER_MODEL", "tiny").strip() or "tiny"
+            logger.info(f"Initializing faster-whisper ({model_name} int8) for forced alignment...")
             t0 = time.time()
             try:
                 # Try offline first for instant startup
                 _whisper_model = WhisperModel(
-                    "tiny",
+                    model_name,
                     device="cpu",
                     compute_type="int8",
                     cpu_threads=4,
@@ -39,7 +40,7 @@ def get_whisper_model():
             except Exception:
                 # Fallback to downloading if model not yet cached locally
                 _whisper_model = WhisperModel(
-                    "tiny",
+                    model_name,
                     device="cpu",
                     compute_type="int8",
                     cpu_threads=4,
@@ -91,18 +92,18 @@ def _try_gemini_alignment(audio_path: str, plain_lines: list[str]) -> str | None
     if not api_key:
         return None
 
+    audio_file = None
     try:
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        
+
         audio_file = genai.upload_file(path=audio_path)
-        for _ in range(10):
+        for _ in range(15):
             file_info = genai.get_file(audio_file.name)
             if file_info.state.name == "ACTIVE":
                 break
             time.sleep(1)
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
         lyrics_str = "\n".join(plain_lines)
         prompt = (
             "You are an expert audio forced-alignment system. Align the following official lyrics "
@@ -113,21 +114,72 @@ def _try_gemini_alignment(audio_path: str, plain_lines: list[str]) -> str | None
             "3. Output one timestamped line for each line in the provided lyrics in sequential order.\n\n"
             f"Official Lyrics:\n{lyrics_str}"
         )
-        response = model.generate_content([audio_file, prompt])
-        text = response.text.strip()
-        if "[" in text and "]" in text:
-            logger.info("Successfully aligned lyrics via Gemini API!")
-            return text
+        for model_name in ("gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"):
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content([audio_file, prompt])
+                text = (response.text or "").strip()
+                if "[" in text and "]" in text:
+                    from lyrics_provider import _parse_lrc
+                    parsed = _parse_lrc(text)
+                    if len(parsed) >= max(1, int(len(plain_lines) * 0.6)):
+                        logger.info(f"Successfully aligned lyrics via Gemini API ({model_name})!")
+                        return text
+            except Exception as inner_e:
+                logger.debug(f"Gemini model {model_name} alignment attempt failed: {inner_e}")
     except Exception as e:
         logger.warning(f"Gemini alignment skipped/failed, falling back to local Whisper: {e}")
+    finally:
+        if audio_file is not None:
+            try:
+                import google.generativeai as genai
+                genai.delete_file(audio_file.name)
+            except Exception:
+                pass
 
     return None
+
+
+def _transcribe_audio_tokens(model, audio_path: str) -> tuple[list[dict], float]:
+    """Transcribe audio into word-level acoustic tokens, trying VAD first with clean fallback."""
+    def _run(use_vad: bool):
+        segments, info = model.transcribe(
+            audio_path,
+            word_timestamps=True,
+            beam_size=1,
+            condition_on_previous_text=False,
+            temperature=0.0,
+            vad_filter=use_vad,
+        )
+        tokens = []
+        for seg in segments:
+            if seg.words:
+                for w in seg.words:
+                    norm = _normalize_token(w.word)
+                    if norm:
+                        tokens.append({
+                            "word": w.word,
+                            "norm": norm,
+                            "start": round(w.start, 2),
+                            "end": round(w.end, 2),
+                            "prob": round(w.probability, 2),
+                        })
+        dur = getattr(info, "duration", 0) or 0.0
+        return tokens, dur
+
+    try:
+        tokens, dur = _run(True)
+        if tokens:
+            return tokens, dur
+    except Exception:
+        pass
+    return _run(False)
 
 
 def align_lyrics_to_audio(audio_path: str | Path, plain_text: str) -> dict:
     """
     Forced Alignment:
-    Takes an audio file path and official plain lyrics text.
+    Takes a local audio file path and official plain lyrics text.
     Returns:
     {
       "success": bool,
@@ -139,7 +191,11 @@ def align_lyrics_to_audio(audio_path: str | Path, plain_text: str) -> dict:
       "matched_ratio": float
     }
     """
-    audio_path = str(Path(audio_path).resolve())
+    raw_path_str = str(audio_path)
+    if raw_path_str.startswith(("http://", "https://")):
+        raise ValueError("Forced alignment requires a locally cached audio file, not a remote URL.")
+
+    audio_path = str(Path(raw_path_str).resolve())
     if not os.path.exists(audio_path):
         raise FileNotFoundError(f"Audio file not found at: {audio_path}")
 
@@ -187,30 +243,7 @@ def align_lyrics_to_audio(audio_path: str | Path, plain_text: str) -> dict:
         raise ValueError("Lyrics text contains no readable words.")
 
     model = get_whisper_model()
-
-    # Transcribe audio to get acoustic timeline tokens
-    segments, info = model.transcribe(
-        audio_path,
-        word_timestamps=True,
-        beam_size=1,
-        condition_on_previous_text=False,
-        temperature=0.0,
-        vad_filter=False
-    )
-
-    audio_tokens = []
-    for seg in segments:
-        if seg.words:
-            for w in seg.words:
-                norm = _normalize_token(w.word)
-                if norm:
-                    audio_tokens.append({
-                        "word": w.word,
-                        "norm": norm,
-                        "start": round(w.start, 2),
-                        "end": round(w.end, 2),
-                        "prob": round(w.probability, 2)
-                    })
+    audio_tokens, info_duration = _transcribe_audio_tokens(model, audio_path)
 
     logger.info(f"Extracted {len(audio_tokens)} acoustic tokens from audio in {time.time() - t_start:.2f}s")
 
@@ -237,7 +270,7 @@ def align_lyrics_to_audio(audio_path: str | Path, plain_text: str) -> dict:
     for b_idx in range(len(matching_blocks) - 1):
         b1 = matching_blocks[b_idx]
         b2 = matching_blocks[b_idx + 1]
-        
+
         r_start = b1.a + b1.size
         r_end = b2.a
         a_start = b1.b + b1.size
@@ -248,57 +281,63 @@ def align_lyrics_to_audio(audio_path: str | Path, plain_text: str) -> dict:
             for curr_r in range(r_start, r_end):
                 best_score = 0.65
                 best_pos = -1
-                
+
                 for scan_a in range(curr_a, min(a_end, curr_a + 6)):
                     sim = difflib.SequenceMatcher(None, ref_norms[curr_r], audio_norms[scan_a]).ratio()
                     if sim > best_score:
                         best_score = sim
                         best_pos = scan_a
-                
+
                 if best_pos != -1:
                     ref_tokens[curr_r]["start"] = audio_tokens[best_pos]["start"]
                     ref_tokens[curr_r]["end"] = audio_tokens[best_pos]["end"]
                     curr_a = best_pos + 1
                     matched_count += 1
 
-    # Group timestamps by line
-    line_timestamps: dict[int, list[float]] = {}
+    # Group matched (word_idx, start_time) by line so missing leading words don't bias lines late
+    line_word_hits: dict[int, list[tuple[int, float]]] = {}
     for t in ref_tokens:
         l_idx = t["line_idx"]
         if t["start"] is not None:
-            if l_idx not in line_timestamps:
-                line_timestamps[l_idx] = []
-            line_timestamps[l_idx].append(t["start"])
+            line_word_hits.setdefault(l_idx, []).append((t["word_idx"], t["start"]))
+
+    line_timestamps: dict[int, float] = {}
+    for l_idx, hits in line_word_hits.items():
+        first_word_idx, first_start = min(hits, key=lambda h: (h[0], h[1]))
+        # Back-estimate opening word time when only later words in the line anchored
+        lead_compensation = min(1.8, first_word_idx * 0.28)
+        line_timestamps[l_idx] = round(max(0.0, first_start - lead_compensation), 2)
 
     # Monotonic line timestamp synthesis & interpolation
     total_lines = len(plain_lines)
-    audio_duration = getattr(info, "duration", 0) or (audio_tokens[-1]["end"] if audio_tokens else 180.0)
+    audio_duration = info_duration or (audio_tokens[-1]["end"] if audio_tokens else 180.0)
 
     final_lrc_entries = []
-    last_timestamp = 0.0
+    last_timestamp = -0.5
 
     for l_idx, line_text in enumerate(plain_lines):
-        if l_idx in line_timestamps and line_timestamps[l_idx]:
-            t = min(line_timestamps[l_idx])
+        if l_idx in line_timestamps:
+            t = line_timestamps[l_idx]
             if t <= last_timestamp:
-                t = round(last_timestamp + 0.4, 2)
+                t = round(last_timestamp + 0.35, 2)
         else:
             next_t = None
             next_idx = None
             for n_idx in range(l_idx + 1, total_lines):
-                if n_idx in line_timestamps and line_timestamps[n_idx]:
-                    next_t = min(line_timestamps[n_idx])
+                if n_idx in line_timestamps:
+                    next_t = line_timestamps[n_idx]
                     next_idx = n_idx
                     break
 
-            if next_t is not None and next_t > last_timestamp and next_idx is not None:
-                step = (next_t - last_timestamp) / (next_idx - l_idx + 1)
-                t = round(last_timestamp + step, 2)
+            anchor_prev = max(0.0, last_timestamp)
+            if next_t is not None and next_t > anchor_prev and next_idx is not None:
+                step = (next_t - anchor_prev) / (next_idx - l_idx + 1)
+                t = round(anchor_prev + step, 2)
             else:
                 remaining = max(1, total_lines - l_idx)
-                remaining_duration = max(5.0, audio_duration - last_timestamp)
+                remaining_duration = max(5.0, audio_duration - anchor_prev)
                 step = min(3.0, remaining_duration / remaining)
-                t = round(last_timestamp + max(0.5, step), 2)
+                t = round(anchor_prev + max(0.5, step), 2)
 
         last_timestamp = t
         minutes = int(t // 60)
